@@ -1,10 +1,12 @@
+#pragma once
+
+#include "codefile.h"
+
 #include <iostream>
 #include <vector>
 
 #include <cassert>
 #include <cstdint>
-
-#include "codefile.h"
 
 class VMState{
 	CodeFile& file;

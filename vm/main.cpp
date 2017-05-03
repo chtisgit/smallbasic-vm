@@ -1,6 +1,6 @@
-#include <iostream>
-
 #include "state.h"
+
+#include <iostream>
 
 using namespace std;
 
