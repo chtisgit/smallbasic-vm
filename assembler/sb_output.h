@@ -235,7 +235,7 @@ public:
 				// can't be resolved
 				return this->labels.at(s);
 			};
-		for(; it <= end; it++){
+		for(; it != end; it++){
 			auto& ot = *it;
 			if(!ot.resolve(resolver)){
 				break;	
