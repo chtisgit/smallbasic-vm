@@ -1,4 +1,5 @@
 #include "sb_opcodes.h"
+#include "sb_output.h"
 
 #include <algorithm>
 #include <fstream>

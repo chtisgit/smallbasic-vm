@@ -33,6 +33,8 @@ struct Opcode{
 		assert(o2 != OT_IMM32);
 		assert(o1 != OT_IMM32 || o2 == OT_NO);
 	}
+
+	Opcode(const Opcode&) = default;
 };
 
 std::map<std::string, Opcode> mnemonic_table = {
@@ -40,7 +42,12 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"movi", {1, 2, OT_REGISTER, OT_IMM16}},
 	{"jmp", {2, 1, OT_IMM32, OT_NO}},
 	{"push", {3, 1, OT_REGISTER, OT_NO}},
-	{"pushi", {4, 1, OT_IMM32, OT_NO}}
+	{"pushi", {4, 1, OT_IMM32, OT_NO}},
+	{"add", {5, 2, OT_REGISTER, OT_REGISTER}},
+	{"sub", {6, 2, OT_REGISTER, OT_REGISTER}},
+	{"mul", {7, 2, OT_REGISTER, OT_REGISTER}},
+	{"div", {8, 2, OT_REGISTER, OT_REGISTER}},
+	{"addi", {9, 2, OT_REGISTER, OT_IMM16}}
 };
 
 
