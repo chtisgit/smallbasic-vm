@@ -74,21 +74,21 @@ auto main(int argc, char **argv) -> int
 	switch(argc){
 	case 1:
 		{
-		ofstream out("a.out");
+		ofstream out("a.out", std::ios_base::out | std::ios_base::binary);
 		rv = assemble(cin, out);
 		}
 		break;
 	case 2:
 		{
 		ifstream in(argv[1]);
-		ofstream out("a.out");
+		ofstream out("a.out", std::ios_base::out | std::ios_base::binary);
 		rv = assemble(in, out);
 		}
 		break;
 	case 3:
 		{
 		ifstream in(argv[1]);
-		ofstream out(argv[2]);
+		ofstream out(argv[2], std::ios_base::out | std::ios_base::binary);
 		rv = assemble(in, out);
 		}
 		break;
