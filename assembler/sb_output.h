@@ -5,6 +5,7 @@
 #include <iostream>
 #include <deque>
 #include <map>
+#include <vector>
 
 #include <cassert>
 #include <cctype>
@@ -22,7 +23,7 @@ auto parse_operand16(const std::string& s) -> uint16_t
 			throw std::runtime_error(s+" no such register");
 		}
 		rv = v;
-	}else if(isdigit(s[0])){
+	}else if(isdigit(s[0]) || s[0] == '-'){
 		// immediate 16 bit value 
 		char *endptr;
 		long v = strtol(s.c_str(), &endptr, 10);
@@ -43,13 +44,13 @@ auto parse_operand16(const std::string& s) -> uint16_t
 }
 
 // resolving labels is currently only implemented for op1
-// and it resolves into op_r
+// and it resolves into op32_r
 // this only supports labels in mnemonics with 1 operand
 template<typename Func>
 auto parse_operand32(const std::string& s, Func get_label_addr) -> int32_t
 {
 	int32_t rv;
-	if(isdigit(s[0])){
+	if(isdigit(s[0]) || s[0] == '-'){
 		// immediate 32 bit value 
 		char *endptr;
 		long v = strtol(s.c_str(), &endptr, 10);
@@ -58,11 +59,7 @@ auto parse_operand32(const std::string& s, Func get_label_addr) -> int32_t
 		}
 		rv = static_cast<uint16_t>(v);
 	}else if(isalpha(s[0]) || s[0] == '_'){
-		try{
-			rv = get_label_addr(s);
-		}catch(std::out_of_range& err){
-			throw std::out_of_range("label not yet known \""+s+"\"");
-		}
+		rv = get_label_addr(s);
 	}else{
 		throw std::runtime_error("invalid operand \""+s+"\"");
 	}
@@ -77,14 +74,14 @@ class OutputTuple{
 	// len .. bytes that this output will need
 	unsigned len;
 	union{
-		// op1_r, op2_r or op_r .. resolved operand(s)
-		uint16_t op1_r, op2_r;
-		int32_t op_r;
+		// op16_r[0], op16_r[1] or op32_r .. resolved operand(s)
+		uint16_t op16_r[2];
+		int32_t op32_r;
 	};
 	bool flag_resolved = false;
 
 public:
-	OutputTuple(const Opcode& op, std::string o1, std::string o2 = std::string())
+	OutputTuple(const Opcode& op, std::string o1 = std::string(), std::string o2 = std::string())
 		: opcode(op), op1(std::move(o1)), op2(std::move(o2))
 	{
 		// could be different for opcodes with less than 2 operands
@@ -95,10 +92,10 @@ public:
 		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len), flag_resolved(ot.flag_resolved)
 	{
 		if(opcode.operands == 2){
-			op1_r = ot.op1_r;
-			op2_r = ot.op2_r;
+			op16_r[0] = ot.op16_r[0];
+			op16_r[1] = ot.op16_r[1];
 		}else{
-			op_r = ot.op_r;
+			op32_r = ot.op32_r;
 		}
 	}
 #if 0
@@ -106,10 +103,10 @@ public:
 		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len), flag_resolved(ot.flag_resolved)
 	{
 		if(opcode.operands == 2){
-			op1_r = ot.op1_r;
-			op2_r = ot.op2_r;
+			op16_r[0] = ot.op16_r[0];
+			op16_r[1] = ot.op16_r[1];
 		}else{
-			op_r = ot.op_r;
+			op32_r = ot.op32_r;
 		}
 	}
 #endif
@@ -127,23 +124,24 @@ public:
 	template<typename Func>
 	auto resolve(Func get_label_addr) -> bool
 	{
-		flag_resolved = true;
 		if(opcode.operands != 0){
 			try{
-				if(opcode.operands == 1){
-					op_r = parse_operand32(op1, get_label_addr);
+				if(opcode.operands == 1 && opcode.optype1 == OT_IMM32){
+					op32_r = parse_operand32(op1, get_label_addr);
 				}else{
-					
-					op1_r = parse_operand16(op1);
-					op2_r = parse_operand16(op1);
+					if(op1.size()){
+						op16_r[0] = parse_operand16(op1);
+					}
+					if(op2.size()){
+						op16_r[1] = parse_operand16(op2);
+					}
 				}
-			}catch(std::out_of_range& ia){
-				// this is not a fatal error!
-				std::cerr << ia.what() << std::endl; // debug
-				flag_resolved = false;
-			}catch(std::runtime_error& err){
-				// this is
-				throw;
+				// if the above parse functions didn't throw
+				// flag as resolved
+				flag_resolved = true;
+			}catch(std::out_of_range& oor){
+				// this is okay, label is not yet known so don't
+				// flag as resolved
 			}
 		}
 		return flag_resolved;
@@ -170,15 +168,15 @@ public:
 	}
 	auto get_operand1() const -> uint16_t
 	{
-		return op1_r;
+		return op16_r[0];
 	}
 	auto get_operand2() const -> uint16_t
 	{
-		return op2_r;
+		return op16_r[1];
 	}
 	auto get_operand32() const -> int32_t
 	{
-		return op_r;
+		return op32_r;
 	}
 };
 
@@ -192,7 +190,8 @@ inline auto put_little_endian(S& o, uint16_t x) -> S&
 template<typename S>
 inline auto put_little_endian(S& o, int32_t x) -> S&
 {
-	return put_little_endian(put_little_endian(o, x & 0xFFFF), (x >> 16) & 0xFFFF);
+	return put_little_endian(put_little_endian(o, static_cast<uint16_t>(x & 0xFFFF)),
+			static_cast<uint16_t>((x >> 16) & 0xFFFF));
 }
 
 inline auto operator<<(std::ostream& o, OutputTuple& ot) -> std::ostream&
@@ -254,14 +253,41 @@ public:
 		}
 	}
 
-	auto add_opcode(const Opcode& op, const std::string& o1, const std::string& o2) -> void
+	auto add_opcode(const Opcode& op, const std::vector<std::string>& tok) -> void
 	{
-		OutputTuple ot(op, o1, o2);
+		switch(op.operands){
+		case 0:
+			buffer.emplace_back(op);
+			break;
+		case 1:
+			buffer.emplace_back(op, tok[1]);
+			break;
+		case 2:
+			buffer.emplace_back(op, tok[1], tok[2]);
+			break;
+		default:
+			std::cout << "operands = " << op.operands << std::endl;
+			assert(0);
+			break;
+		}
 		
-
 		// operands parameter would enable using different
 		// opcode sizes here
 		addr += 5;
+	}
+
+	auto add_label(const std::string& s) -> void
+	{
+		if(labels.find(s) != labels.end()){
+			throw std::runtime_error("label '"+s+"' defined (at least) twice");
+		}
+		labels[s] = addr;
+
+		if(!buffer.empty() && buffer.front().needed_label() == s){
+			// if this label is used in the first command in the
+			// buffer write everything we can
+			write();
+		}
 	}
 };
 

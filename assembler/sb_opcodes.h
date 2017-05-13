@@ -47,7 +47,8 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"sub", {6, 2, OT_REGISTER, OT_REGISTER}},
 	{"mul", {7, 2, OT_REGISTER, OT_REGISTER}},
 	{"div", {8, 2, OT_REGISTER, OT_REGISTER}},
-	{"addi", {9, 2, OT_REGISTER, OT_IMM16}}
+	{"addi", {9, 2, OT_REGISTER, OT_IMM16}},
+	{"pop", {10, 1, OT_REGISTER, OT_NO}}
 };
 
 
