@@ -82,8 +82,9 @@ op_pop:
 	state.stack.pop_back();
 	next_instr;
 op_call:
+	reg1 = state.decode_imm32();
 	state.advance(5); // saved ip must be next instruction
-	state.call(state.decode_imm32());
+	state.call(reg1);
 	dispatch(0);
 op_ret:
 	if(!state.ret()) return;
