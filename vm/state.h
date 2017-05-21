@@ -6,6 +6,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <map>
+#include "value.h"
 
 template<unsigned commands>
 class VMState{
@@ -15,8 +17,10 @@ class VMState{
 
 	int ip = 0; // instruction pointer
 	bool cf = false; // condition flag
-
+		
 public:
+	
+	std::map<int, Value> registers; 
 
 	VMState(CodeFile& f)
 		: file(f)
@@ -72,6 +76,19 @@ public:
 		uint8_t op = file.code()[ip];
 		assert(unsigned(op) < commands);
 		return op;
+	}
+
+	auto decode2() -> int16_t
+	{
+		const auto *c = &file.code()[ip];
+		return (int32_t(c[3])) | (int32_t(c[4]) << 8);
+	}
+
+	auto decode1() -> int16_t
+	{
+		const auto *c = &file.code()[ip];
+		return int32_t(c[1]) | (int32_t(c[2]) << 8);
+	
 	}
 
 	auto decode_imm32() -> int32_t

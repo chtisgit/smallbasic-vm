@@ -15,40 +15,52 @@ auto run(CodeFile& file) -> void
 	VMState<commands_no> state(file);
 #define	dispatch(A)   state.advance(A);\
 	              goto *commands[state.decode()]
+#define next_instr  state.advance(5);\
+	              goto *commands[state.decode()]
+
 
 	for(int i = commands_no; i < 256; i++){
 		commands[i] = &&op_notimplemented;
 	}
 
+	int16_t reg1;
+	int16_t reg2;
+
 	dispatch(0);
 	// VM operations:
 op_copy:
 	// TODO: mov operation
-	printf("copy\n");
-	dispatch(5);
+	//printf("copy\n");
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg2] = state.registers[reg1];	
+	next_instr;
 op_movi:
 	// TODO: add operation
-	printf("movi\n");
-	dispatch(5);
+	//printf("movi\n");
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = reg2;
+	next_instr;
 op_jmp:
 	state.jump(state.decode_imm32());
 	dispatch(0);
 op_push:
-	dispatch(5);
+	next_instr;
 op_pushi:
-	dispatch(5);
+	next_instr;
 op_add:
-	dispatch(5);
+	next_instr;
 op_sub:
-	dispatch(5);
+	next_instr;
 op_mul:
-	dispatch(5);
+	next_instr;
 op_div:
-	dispatch(5);
+	next_instr;
 op_addi:
-	dispatch(5);
+	next_instr;
 op_pop:
-	dispatch(5);
+	next_instr;
 op_call:
 	state.advance(5); // saved ip must be next instruction
 	state.call(state.decode_imm32());
