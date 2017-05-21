@@ -53,7 +53,7 @@ auto assemble(istream& in, ostream& out) -> int
 		for(auto it = tok.begin(); it != first_non_label; it++){
 			auto& label = *it;
 			label.erase(label.end()-1, label.end());
-			output.add_label(label);
+			output.add_label(line_n, label);
 		}
 		tok.erase(tok.begin(), first_non_label);
 
@@ -61,20 +61,29 @@ auto assemble(istream& in, ostream& out) -> int
 			/* empty line */
 			continue;
 		}
-		auto& op = mnemonic_table.at(tok[0]);
 
-		// Debugging
-		cerr << "mnemonic: '" << tok[0] << "' opcode="
-		     << int(mnemonic_table.at(tok[0]).code) << endl;
+		if(tok[0] == "char"){
+			output.add_char(line_n, tok);
+		}else if(tok[0] == "int"){
+			output.add_int(line_n, tok);
+		}else if(tok[0] == "float"){
+			output.add_float(line_n, tok);
+		}else{
+			auto& op = mnemonic_table.at(tok[0]);
 
-		assert(tok.size() >= 1);
-		if(op.operands != tok.size() - 1){
-			cerr << "error: mnemonic " << tok[0]
-			     << " takes " << op.operands
-			     << " operand(s)" << endl;
-			return 1;
+			// Debugging
+			//cerr << "mnemonic: '" << tok[0] << "' opcode="
+			//     << int(mnemonic_table.at(tok[0]).code) << endl;
+
+			assert(tok.size() >= 1);
+			if(op.operands != tok.size() - 1){
+				cerr << "error: mnemonic " << tok[0]
+				     << " takes " << op.operands
+				     << " operand(s)" << endl;
+				return 1;
+			}
+			output.add_opcode(line_n, op, tok);
 		}
-		output.add_opcode(op, tok);
 		
 	}
 	output.force_write();

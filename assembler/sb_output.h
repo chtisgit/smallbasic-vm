@@ -2,6 +2,7 @@
 
 #include "sb_opcodes.h"
 
+#include <algorithm>
 #include <iostream>
 #include <deque>
 #include <map>
@@ -12,7 +13,7 @@
 #include <cstdlib>
 #include <cstdint>
 
-auto parse_operand16(const std::string& s) -> uint16_t
+auto parse_operand16(const std::string& s, enum OperandType *optype = NULL) -> uint16_t
 {
 	uint16_t rv;
 	if(s[0] == '$'){
@@ -23,6 +24,7 @@ auto parse_operand16(const std::string& s) -> uint16_t
 			throw std::runtime_error(s+" no such register");
 		}
 		rv = v;
+		if(optype != NULL) *optype = OT_REGISTER;
 	}else if(isdigit(s[0]) || s[0] == '-'){
 		// immediate 16 bit value 
 		char *endptr;
@@ -37,6 +39,7 @@ auto parse_operand16(const std::string& s) -> uint16_t
 		}else{
 			rv = 65536+v;
 		}
+		if(optype != NULL) *optype = OT_IMM16;
 	}else{
 		throw std::runtime_error("invalid operand \""+s+"\"");
 	}
@@ -67,6 +70,11 @@ auto parse_operand32(const std::string& s, Func get_label_addr) -> int32_t
 
 }
 
+struct Label{
+	int line;
+	int32_t addr;
+};
+
 class OutputTuple{
 	const Opcode& opcode;
 	// op1, op2 .. the operands may be resolved lazily
@@ -79,17 +87,33 @@ class OutputTuple{
 		int32_t op32_r;
 	};
 	bool flag_resolved = false;
+	int line;
+
+	static auto warning(int line, const char *t, OperandType expected, OperandType actual) -> void
+	{
+		if(expected != actual){
+			if(expected == OT_REGISTER)
+				std::cerr << "warning: " << t << " operand should be "
+					"register (immediate given) in line " <<
+					line << std::endl;
+			else
+				std::cerr << "warning: " << t << " operand should be "
+					"immediate (register given) in line " << 
+					line << std::endl;
+		}
+	}
 
 public:
-	OutputTuple(const Opcode& op, std::string o1 = std::string(), std::string o2 = std::string())
-		: opcode(op), op1(std::move(o1)), op2(std::move(o2))
+	OutputTuple(int line, const Opcode& op, std::string o1 = std::string(), std::string o2 = std::string())
+		: opcode(op), op1(std::move(o1)), op2(std::move(o2)), line(line)
 	{
 		// could be different for opcodes with less than 2 operands
 		len = 5;
 	}
 
 	OutputTuple(const OutputTuple& ot)
-		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len), flag_resolved(ot.flag_resolved)
+		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len),
+		  flag_resolved(ot.flag_resolved), line(ot.line)
 	{
 		if(opcode.operands == 2){
 			op16_r[0] = ot.op16_r[0];
@@ -129,11 +153,18 @@ public:
 				if(opcode.operands == 1 && opcode.optype1 == OT_IMM32){
 					op32_r = parse_operand32(op1, get_label_addr);
 				}else{
+					enum OperandType ot;
 					if(op1.size()){
-						op16_r[0] = parse_operand16(op1);
+						op16_r[0] = parse_operand16(op1, &ot);
+						if(ot != opcode.optype1){
+							warning(line,"first",opcode.optype1,ot);
+						}
 					}
 					if(op2.size()){
-						op16_r[1] = parse_operand16(op2);
+						op16_r[1] = parse_operand16(op2, &ot);
+						if(ot != opcode.optype1){
+							warning(line,"second",opcode.optype2,ot);
+						}
 					}
 				}
 				// if the above parse functions didn't throw
@@ -193,6 +224,20 @@ inline auto put_little_endian(S& o, int32_t x) -> S&
 	return put_little_endian(put_little_endian(o, static_cast<uint16_t>(x & 0xFFFF)),
 			static_cast<uint16_t>((x >> 16) & 0xFFFF));
 }
+template<typename S>
+inline auto put_little_endian(S& o, float x) -> S&
+{
+	/* hack... */
+	union{
+		float y;
+		uint8_t buf[4];
+	} u;
+	u.y = x;
+	for(uint8_t x : u.buf){
+		o.put(x);
+	}
+	return o;
+}
 
 inline auto operator<<(std::ostream& o, OutputTuple& ot) -> std::ostream&
 {
@@ -217,7 +262,7 @@ inline auto operator<<(std::ostream& o, OutputTuple& ot) -> std::ostream&
 class Output{
 	std::ostream& out;
 	std::deque<OutputTuple> buffer;
-	std::map<std::string, int32_t> labels;
+	std::map<std::string, Label> labels;
 
 	int32_t addr = 0;
 public:
@@ -232,7 +277,7 @@ public:
 		auto resolver = [this](const std::string& s) -> int32_t{
 				// this lambda must throw out_of_range if the label
 				// can't be resolved
-				return this->labels.at(s);
+				return this->labels.at(s).addr;
 			};
 		for(; it != end; it++){
 			auto& ot = *it;
@@ -253,17 +298,17 @@ public:
 		}
 	}
 
-	auto add_opcode(const Opcode& op, const std::vector<std::string>& tok) -> void
+	auto add_opcode(int line, const Opcode& op, const std::vector<std::string>& tok) -> void
 	{
 		switch(op.operands){
 		case 0:
-			buffer.emplace_back(op);
+			buffer.emplace_back(line, op);
 			break;
 		case 1:
-			buffer.emplace_back(op, tok[1]);
+			buffer.emplace_back(line, op, tok[1]);
 			break;
 		case 2:
-			buffer.emplace_back(op, tok[1], tok[2]);
+			buffer.emplace_back(line, op, tok[1], tok[2]);
 			break;
 		default:
 			std::cout << "operands = " << op.operands << std::endl;
@@ -276,18 +321,57 @@ public:
 		addr += 5;
 	}
 
-	auto add_label(const std::string& s) -> void
+	auto add_label(int line, const std::string& s) -> void
 	{
 		if(labels.find(s) != labels.end()){
-			throw std::runtime_error("label '"+s+"' defined (at least) twice");
+			throw std::runtime_error("label '"+s+"' defined (at least) twice (lines "+
+				std::to_string(labels[s].line)+" and "+std::to_string(line)+")");
 		}
-		labels[s] = addr;
+		labels[s] = Label{line, addr};
 
 		if(!buffer.empty() && buffer.front().needed_label() == s){
 			// if this label is used in the first command in the
 			// buffer write everything we can
 			write();
 		}
+	}
+
+	auto add_char(int line, const std::vector<std::string>& tok) -> void
+	{
+		for(auto it = tok.cbegin()+1; it != tok.cend(); it++){
+			const auto& x = *it;
+			if(x[0] == '"'){
+				size_t size = x.size()-1;
+				if(x.back() != '"'){
+					std::cerr << "warning: string literal not closed (line " << 
+					          line << ")" << std::endl;
+				}
+				for(size_t i = 1; i < size; i++){
+					out.put(x[i]);
+				}
+			}else{
+				char *end_ptr;
+				out.put(static_cast<uint8_t>(strtol(x.c_str(), &end_ptr, 10)));
+			}
+		}
+	}
+
+	auto add_int(int line, const std::vector<std::string>& tok) -> void
+	{
+		for_each(tok.cbegin()+1, tok.cend(), [this](const std::string& x){
+			char *end_ptr;
+			put_little_endian(this->out, static_cast<int32_t>(strtol(x.c_str(), &end_ptr, 10)));
+			this->addr += 4;
+		});
+	}
+
+	auto add_float(int line, const std::vector<std::string>& tok) -> void
+	{
+		for_each(tok.cbegin()+1, tok.cend(), [this](const std::string& x){
+			char* end_ptr;
+			put_little_endian(this->out, strtof(x.c_str(), &end_ptr));
+			this->addr += 4;
+		});
 	}
 };
 
