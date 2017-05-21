@@ -11,7 +11,10 @@ template<unsigned commands>
 class VMState{
 	CodeFile& file;
 
+	std::vector<int> callstack;
+
 	int ip = 0; // instruction pointer
+	bool cf = false; // condition flag
 
 public:
 
@@ -39,6 +42,30 @@ public:
 		assert(ip >= 0 && ip < file.size());
 	}
 
+	auto conditional_reljump(int then_addr, int else_addr) -> void
+	{
+		if(cf){
+			advance(then_addr);
+		}else{
+			advance(else_addr);
+		}
+		cf = false;
+	}
+
+	auto call(int a) -> void
+	{
+		callstack.push_back(ip);
+		jump(a);
+	}
+
+	auto ret() -> bool
+	{
+		if(callstack.empty())
+			return false;
+		jump(callstack.back());
+		callstack.pop_back();
+		return true;
+	}
 
 	auto decode() -> uint8_t
 	{

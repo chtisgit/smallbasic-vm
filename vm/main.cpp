@@ -5,7 +5,12 @@ using namespace std;
 
 auto run(CodeFile& file) -> void
 {
-	void *commands[256] = { &&op_copy, &&op_movi, &&op_jmp };
+	void *commands[256] = {
+		&&op_copy, &&op_movi, &&op_jmp, &&op_push,
+		&&op_pushi, &&op_add, &&op_sub, &&op_mul,
+		&&op_div, &&op_addi, &&op_pop, &&op_call,
+		&&op_ret, &&op_jc, &&op_jnc
+	};
 	constexpr int commands_no = 3;
 	VMState<commands_no> state(file);
 #define	dispatch(A)   state.advance(A);\
@@ -28,7 +33,36 @@ op_movi:
 op_jmp:
 	state.jump(state.decode_imm32());
 	dispatch(0);
-	
+op_push:
+	dispatch(5);
+op_pushi:
+	dispatch(5);
+op_add:
+	dispatch(5);
+op_sub:
+	dispatch(5);
+op_mul:
+	dispatch(5);
+op_div:
+	dispatch(5);
+op_addi:
+	dispatch(5);
+op_pop:
+	dispatch(5);
+op_call:
+	state.advance(5); // saved ip must be next instruction
+	state.call(state.decode_imm32());
+	dispatch(0);
+op_ret:
+	if(!state.ret()) return;
+	dispatch(0);
+op_jc:
+	state.conditional_reljump(state.decode_imm32(), 5);
+	dispatch(0);
+op_jnc:
+	state.conditional_reljump(5, state.decode_imm32());
+	dispatch(0);
+
 op_notimplemented:
 	fprintf(stderr, "error: opcode %d not implemented!\n",
 			int(state.decode()));
