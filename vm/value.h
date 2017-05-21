@@ -8,7 +8,6 @@
 class Value{
 private:
 enum Type{INT, FLOAT, STRING, NONE};
-std::tuple<int, float, std::string> value;
 int int_val;
 float float_val;
 std::string string_val;
@@ -21,17 +20,17 @@ public:
 
 	Value(int x){
 		type = INT;
-		std::get<INT>(value) = x;		
+		int_val = x;		
 	}
 	
 	Value(float x){
 		type = FLOAT;
-		std::get<FLOAT>(value) = x;		
+		float_val = x;		
 	}
 
 	Value(std::string x){
 		type = STRING;
-		std::get<STRING>(value) = x;		
+		string_val = x;		
 	}
 
 	~Value(){
@@ -58,15 +57,15 @@ public:
 	}
 	
 	int getIntVal(void){
-		return std::get<INT>(value);
+		return std::get<INT>(getValue());
 	}
 	
 	float getFloatVal(void){
-		return std::get<FLOAT>(value);
+		return std::get<FLOAT>(getValue());
 	}
 
 	std::string getStringVal(void){
-		return std::get<STRING>(value);
+		return std::get<STRING>(getValue());
 	}
 
 };
