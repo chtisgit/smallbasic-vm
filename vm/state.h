@@ -75,6 +75,7 @@ public:
 	auto decode() -> uint8_t
 	{
 		uint8_t op = file.code()[ip];
+		printf("opcode: %d\n", op);
 		assert(unsigned(op) < commands);
 		return op;
 	}

@@ -11,7 +11,7 @@ auto run(CodeFile& file) -> void
 		&&op_div, &&op_addi, &&op_pop, &&op_call,
 		&&op_ret, &&op_jc, &&op_jnc
 	};
-	constexpr int commands_no = 3;
+	constexpr int commands_no = 15;
 	VMState<commands_no> state(file);
 #define	dispatch(A)   state.advance(A);\
 	              goto *commands[state.decode()]
@@ -30,7 +30,7 @@ op_copy:
 	//printf("copy\n");
 	reg1 = state.decode1();
 	reg2 = state.decode2();
-	state.registers[reg2] = state.registers[reg1];	
+	state.registers[reg1] = state.registers[reg2];	
 	next_instr;
 op_movi:
 	// TODO: add operation
@@ -47,18 +47,39 @@ op_push:
 	state.stack.push_back(state.registers[reg1]);
 	next_instr;
 op_pushi:
+	state.stack.push_back(state.decode_imm32());
 	next_instr;
 op_add:
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = state.registers[reg1].getIntVal() + state.registers[reg2].getIntVal();
 	next_instr;
 op_sub:
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = state.registers[reg1].getIntVal() - state.registers[reg2].getIntVal();
 	next_instr;
 op_mul:
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = state.registers[reg1].getIntVal() * state.registers[reg2].getIntVal();
 	next_instr;
 op_div:
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = state.registers[reg1].getIntVal() / state.registers[reg2].getIntVal();
 	next_instr;
 op_addi:
+	reg1 = state.decode1();
+	reg2 = state.decode2();
+	state.registers[reg1] = state.registers[reg1].getIntVal() + reg2;
+	printf("reg: %d content: %d\n", reg1, state.registers[reg1].getIntVal());
 	next_instr;
 op_pop:
+	if(state.stack.empty())
+			return;
+	state.registers[state.decode1()]= state.stack.back();
+	state.stack.pop_back();
 	next_instr;
 op_call:
 	state.advance(5); // saved ip must be next instruction

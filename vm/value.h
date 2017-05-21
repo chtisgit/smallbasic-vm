@@ -9,12 +9,12 @@
 
 class Value{
 private:
-enum Type{INT, FLOAT, STRING, NONE};
-int int_val;
-float float_val;
-std::string string_val;
-public:
+	enum Type{INT, FLOAT, STRING, NONE};
 	Type type;
+	int int_val;
+	float float_val;
+	std::string string_val;
+public:
 
 	Value(){
 		type = NONE;
