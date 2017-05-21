@@ -4,6 +4,8 @@
 #include <tuple>
 #include <iostream>
 #include <string.h>
+#include <assert.h>
+
 
 class Value{
 private:
@@ -57,15 +59,61 @@ public:
 	}
 	
 	int getIntVal(void){
-		return std::get<INT>(getValue());
+		switch(type){
+		case INT:
+			return std::get<INT>(getValue());
+			break;
+		case FLOAT:
+			return (int)std::get<FLOAT>(getValue());
+			break;
+		case STRING:
+			return std::stoi(std::get<STRING>(getValue()), nullptr, 10);
+			break;
+		case NONE:
+			return 0;
+			break;
+		default:
+			assert(0);
+		}	
 	}
 	
 	float getFloatVal(void){
-		return std::get<FLOAT>(getValue());
+		switch(type){
+		case INT:
+			return (float)std::get<INT>(getValue());
+			break;
+		case FLOAT:
+			return std::get<FLOAT>(getValue());
+			break;
+		case STRING:
+			std::string::size_type sz;
+			return std::stof(std::get<STRING>(getValue()), &sz);
+			break;
+		case NONE:
+			return 0.0;
+			break;
+		default:
+			assert(0);
+		}
 	}
 
 	std::string getStringVal(void){
-		return std::get<STRING>(getValue());
+		switch(type){
+		case INT:
+			return std::to_string(std::get<INT>(getValue()));
+			break;
+		case FLOAT:
+			return std::to_string(std::get<FLOAT>(getValue()));
+			break;
+		case STRING:
+			return std::get<STRING>(getValue());
+			break;
+		case NONE:
+			return "";
+			break;
+		default:
+			assert(0);
+		}
 	}
 
 };
