@@ -20,7 +20,8 @@ class VMState{
 		
 public:
 	
-	std::map<int, Value> registers; 
+	std::map<int, Value> registers;
+	std::vector<Value> stack;
 
 	VMState(CodeFile& f)
 		: file(f)

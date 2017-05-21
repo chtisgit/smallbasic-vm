@@ -15,16 +15,13 @@ auto run(CodeFile& file) -> void
 	VMState<commands_no> state(file);
 #define	dispatch(A)   state.advance(A);\
 	              goto *commands[state.decode()]
-#define next_instr  state.advance(5);\
-	              goto *commands[state.decode()]
-
+#define next_instr    dispatch(5)
 
 	for(int i = commands_no; i < 256; i++){
 		commands[i] = &&op_notimplemented;
 	}
 
-	int16_t reg1;
-	int16_t reg2;
+	int reg1, reg2;
 
 	dispatch(0);
 	// VM operations:
@@ -46,6 +43,8 @@ op_jmp:
 	state.jump(state.decode_imm32());
 	dispatch(0);
 op_push:
+	reg1 = state.decode1();
+	state.stack.push_back(state.registers[reg1]);
 	next_instr;
 op_pushi:
 	next_instr;
