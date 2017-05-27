@@ -59,7 +59,9 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"grt", {18, 2, OT_REGISTER, OT_REGISTER}},
 	{"lrt", {19, 2, OT_REGISTER, OT_REGISTER}},
 	{"geq", {20, 2, OT_REGISTER, OT_REGISTER}},
-	{"leq", {21, 2, OT_REGISTER, OT_REGISTER}}
-};
+	{"leq", {21, 2, OT_REGISTER, OT_REGISTER}},
+	{"reg_debug", {22, 2, OT_REGISTER, OT_REGISTER}},//try to keep at the end 
+	{"str_debug", {23, 1, OT_REGISTER, OT_NO}}, //try to keep at the end 
+	};
 
 

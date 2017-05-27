@@ -44,6 +44,11 @@ public:
 		ip = a;
 		assert(ip >= 0 && ip < file.size());
 	}
+	
+	auto set_cond(bool c) -> void
+	{
+		cf = c;
+	}
 
 	auto conditional_reljump(int then_addr, int else_addr) -> void
 	{
