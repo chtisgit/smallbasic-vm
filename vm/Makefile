@@ -4,14 +4,14 @@ RM ?= rm
 SHELL ?= /bin/sh
 
 CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -std=c++11
-OBJS = main.o
+OBJS = main.o 
 
 all: sbvm
 
 sbvm: $(OBJS)
 	$(CXX) $(LFLAGS) -o $@ $^
 
-%.o: %.cpp
+%.o: %.cpp value.h 
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:

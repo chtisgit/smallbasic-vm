@@ -10,14 +10,13 @@
 #include "value.h"
 
 class VMState{
-	CodeFile& file;
-
 	std::vector<int> callstack;
 
 	int ip = 0; // instruction pointer
 	bool cf = false; // condition flag
 		
 public:
+	const CodeFile& file;
 	
 	std::map<int, Value> registers;
 	std::vector<Value> stack;

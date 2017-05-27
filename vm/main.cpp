@@ -9,7 +9,7 @@ auto run(CodeFile& file) -> void
 		&&op_copy, &&op_movi, &&op_jmp, &&op_push,
 		&&op_pushi, &&op_add, &&op_sub, &&op_mul,
 		&&op_div, &&op_addi, &&op_pop, &&op_call,
-		&&op_ret, &&op_jc, &&op_jnc
+		&&op_ret, &&op_jc, &&op_jnc, &&op_lsrt
 	};
 	int commands_no = 0;
 	for(auto c: commands){
@@ -27,86 +27,106 @@ auto run(CodeFile& file) -> void
 		commands[i] = &&op_notimplemented;
 	}
 
-	int reg1, reg2;
-
 	dispatch(0);
 	// VM operations:
-op_copy:
+op_copy:{
 	// TODO: mov operation
 	//printf("copy\n");
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg2];	
+	}
 	next_instr;
-op_movi:
+op_movi:{
 	// TODO: add operation
 	//printf("movi\n");
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = reg2;
+	}
 	next_instr;
-op_jmp:
+op_jmp:{
 	state.jump(state.decode_imm32());
+	}
 	dispatch(0);
-op_push:
-	reg1 = state.decode1();
+op_push:{
+	int reg1 = state.decode1();
 	state.stack.push_back(state.registers[reg1]);
+	}
 	next_instr;
-op_pushi:
+op_pushi:{
 	state.stack.push_back(state.decode_imm32());
+	}
 	next_instr;
-op_add:
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+op_add:{
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg1].getIntVal() + state.registers[reg2].getIntVal();
+	}
 	next_instr;
-op_sub:
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+op_sub:{
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg1].getIntVal() - state.registers[reg2].getIntVal();
+	}
 	next_instr;
-op_mul:
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+op_mul:{
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg1].getIntVal() * state.registers[reg2].getIntVal();
+	}
 	next_instr;
-op_div:
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+op_div:{
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg1].getIntVal() / state.registers[reg2].getIntVal();
+	}
 	next_instr;
-op_addi:
-	reg1 = state.decode1();
-	reg2 = state.decode2();
+op_addi:{
+	int reg1 = state.decode1();
+	int reg2 = state.decode2();
 	state.registers[reg1] = state.registers[reg1].getIntVal() + reg2;
 	printf("reg: %d content: %d\n", reg1, state.registers[reg1].getIntVal());
+	}
 	next_instr;
-op_pop:
+op_pop:{
 	if(state.stack.empty())
 			return;
 	state.registers[state.decode1()]= state.stack.back();
 	state.stack.pop_back();
+	}
 	next_instr;
-op_call:
-	reg1 = state.decode_imm32();
+op_call:{
+	int reg1 = state.decode_imm32();
 	state.advance(5); // saved ip must be next instruction
 	state.call(reg1);
+	}
 	dispatch(0);
-op_ret:
+op_ret:{
 	if(!state.ret()) return;
+	}	
 	dispatch(0);
-op_jc:
+op_jc:{
 	state.conditional_reljump(state.decode_imm32(), 5);
+	}
 	dispatch(0);
-op_jnc:
+op_jnc:{
 	state.conditional_reljump(5, state.decode_imm32());
+	}
 	dispatch(0);
-
-op_notimplemented:
+op_lsrt:{
+	if(state.stack.empty())
+			return;
+	state.registers[state.decode1()]= std::string(reinterpret_cast<const char *>(state.file.code()) + state.stack.back().getIntVal());
+	state.stack.pop_back();
+	printf("string in reg %d : %s\n", state.decode1(), (state.registers[state.decode1()]).getStringVal().c_str());
+}
+next_instr;
+op_notimplemented:{
 	fprintf(stderr, "error: opcode %d not implemented!\n",
 			int(state.decode()));
 	return;
-	
+	}	
 }
 
 auto main(int argc, char **argv) -> int
