@@ -114,7 +114,7 @@ op_jnc:{
 	state.conditional_reljump(5, state.decode_imm32());
 	}
 	dispatch(0);
-op_lsrt:{
+op_lstr:{
 	if(state.stack.empty())
 			return;
 	state.registers[state.decode1()]= std::string(reinterpret_cast<const char *>(state.file.code()) + state.stack.back().getIntVal());
