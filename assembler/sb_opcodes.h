@@ -53,7 +53,13 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"ret", {12, 1, OT_IMM16, OT_NO}},
 	{"jc", {13, 1, OT_IMM32, OT_NO}},
 	{"jnc", {14, 1, OT_IMM32, OT_NO}},
-	{"lstr", {15, 1, OT_REGISTER, OT_NO}}
+	{"lstr", {15, 1, OT_REGISTER, OT_NO}},
+	{"equ", {16, 2, OT_REGISTER, OT_REGISTER}},
+	{"neq", {17, 2, OT_REGISTER, OT_REGISTER}},
+	{"grt", {18, 2, OT_REGISTER, OT_REGISTER}},
+	{"lrt", {19, 2, OT_REGISTER, OT_REGISTER}},
+	{"geq", {20, 2, OT_REGISTER, OT_REGISTER}},
+	{"leq", {21, 2, OT_REGISTER, OT_REGISTER}}
 };
 
 
