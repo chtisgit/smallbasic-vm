@@ -11,8 +11,14 @@ auto run(CodeFile& file) -> void
 		&&op_div, &&op_addi, &&op_pop, &&op_call,
 		&&op_ret, &&op_jc, &&op_jnc
 	};
-	constexpr int commands_no = 15;
-	VMState<commands_no> state(file);
+	int commands_no = 0;
+	for(auto c: commands){
+		if(c != NULL)
+			commands_no++;
+		else
+			break;
+	}
+	VMState state(file);
 #define	dispatch(A)   state.advance(A);\
 	              goto *commands[state.decode()]
 #define next_instr    dispatch(5)
