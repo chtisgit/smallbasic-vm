@@ -11,7 +11,7 @@ all: sbas
 sbas: $(OBJS)
 	$(CXX) $(LFLAGS) -o $@ $^
 
-%.o: %.cpp
+%.o: %.cpp %.h
 	$(CXX) $(CXXFLAGS) -c -o $@ $<
 
 clean:

@@ -63,13 +63,19 @@ auto assemble(istream& in, ostream& out) -> int
 		}
 
 		if(tok[0] == "char"){
-			output.add_char(line_n, tok);
+			output.add_char(line_n, line);
 		}else if(tok[0] == "int"){
 			output.add_int(line_n, tok);
 		}else if(tok[0] == "float"){
 			output.add_float(line_n, tok);
 		}else{
-			auto& op = mnemonic_table.at(tok[0]);
+			const auto& op = [&tok]{
+				try{
+					return mnemonic_table.at(tok[0]);
+				}catch(std::out_of_range& e){
+					throw std::runtime_error("unknown mnemonic '"+tok[0]+"'");
+				}
+			}();
 
 			// Debugging
 			//cerr << "mnemonic: '" << tok[0] << "' opcode="
@@ -84,7 +90,6 @@ auto assemble(istream& in, ostream& out) -> int
 			}
 			output.add_opcode(line_n, op, tok);
 		}
-		
 	}
 	output.force_write();
 	return 0;

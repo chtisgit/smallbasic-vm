@@ -3,7 +3,7 @@ CXX ?= g++
 RM ?= rm
 SHELL ?= /bin/sh
 
-CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -std=c++11
+CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -std=c++11 -DDEBUG
 OBJS = main.o 
 
 all: sbvm

@@ -12,6 +12,7 @@
 #include <cctype>
 #include <cstdlib>
 #include <cstdint>
+#include <cstring>
 
 auto parse_operand16(const std::string& s, enum OperandType *optype = NULL) -> uint16_t
 {
@@ -81,12 +82,9 @@ class OutputTuple{
 	std::string op1, op2;
 	// len .. bytes that this output will need
 	unsigned len;
-	union{
-		// op16_r[0], op16_r[1] or op32_r .. resolved operand(s)
-		uint16_t op16_r[2];
-		int32_t op32_r;
-	};
-	bool flag_resolved = false;
+	// op16_r[0], op16_r[1] or op32_r .. resolved operand(s)
+	uint16_t op16_r[2];
+	int32_t op32_r;
 	int line;
 	std::vector<uint8_t> towrite;
 
@@ -108,30 +106,19 @@ public:
 	OutputTuple(int line, const Opcode *const op, std::string o1 = std::string(), std::string o2 = std::string())
 		: opcode(op), op1(std::move(o1)), op2(std::move(o2)), line(line)
 	{
+		std::cerr << "opcode=" << int(op->code) << " op1=" << op1 << " op2=" << op2 << std::endl;
 		// could be different for opcodes with less than 2 operands
 		len = 5;
 	}
 
-	OutputTuple(const OutputTuple& ot)
-		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len),
-		  flag_resolved(ot.flag_resolved), line(ot.line)
-	{
-		if(opcode->operands == 2){
-			op16_r[0] = ot.op16_r[0];
-			op16_r[1] = ot.op16_r[1];
-		}else{
-			op32_r = ot.op32_r;
-		}
-	}
-
 	OutputTuple(std::vector<uint8_t>&& vec)
-		: opcode(nullptr), flag_resolved(true), towrite(vec)
+		: opcode(nullptr), towrite(vec)
 	{
 	}
 
 #if 0
 	OutputTuple(OutputTuple&& ot)
-		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len), flag_resolved(ot.flag_resolved)
+		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len)
 	{
 		if(opcode->operands == 2){
 			op16_r[0] = ot.op16_r[0];
@@ -141,6 +128,7 @@ public:
 		}
 	}
 #endif
+
 	auto operator=(OutputTuple ot) -> OutputTuple&
 	{
 		std::swap(*this, ot);
@@ -155,11 +143,11 @@ public:
 	template<typename Func>
 	auto resolve(Func get_label_addr) -> bool
 	{
-		if(towrite.empty() && opcode->operands != 0){
+		if(towrite.empty()){
 			try{
 				if(opcode->operands == 1 && opcode->optype1 == OT_IMM32){
 					op32_r = parse_operand32(op1, get_label_addr);
-				}else{
+				}else if(opcode->operands == 2){
 					enum OperandType ot;
 					if(op1.size()){
 						op16_r[0] = parse_operand16(op1, &ot);
@@ -175,26 +163,27 @@ public:
 					}
 				}
 				// if the above parse functions didn't throw
-				// flag as resolved
-				flag_resolved = true;
+				// flag as resolved by populating towrite
 
-				towrite.push_back(get_opcode());
+				towrite.push_back(opcode->code);
+				std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
 				uint32_t temp;
-				switch(operands()){
+				switch(opcode->operands){
 				case 0:
 					// write garbage (fall through)
 				case 1:
-					temp = get_operand32();
+					temp = op32_r;
+					std::cerr << "op32 = " << temp << std::endl;
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
 					towrite.push_back((temp >> 16) & 0xFF);
 					towrite.push_back((temp >> 24) & 0xFF);
 					break;
 				case 2:
-					temp = get_operand1();
+					temp = op16_r[0];
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
-					temp = get_operand2();
+					temp = op16_r[1];
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
 					break;
@@ -207,12 +196,12 @@ public:
 				// flag as resolved
 			}
 		}
-		return flag_resolved;
+		return resolved();
 	}
 
 	auto write(std::ostream& o) const -> std::ostream&
 	{
-		std::for_each(towrite.cbegin(), towrite.cend(), [&o](const uint8_t& u) -> void{
+		std::for_each(towrite.cbegin(), towrite.cend(), [&o](const uint8_t& u){
 			o << u;
 		});
 		return o;
@@ -225,36 +214,9 @@ public:
 
 	auto resolved() const -> bool
 	{
-		return flag_resolved;
-	}
-
-	auto operands() const -> unsigned
-	{
-		return opcode->operands;
-	}
-
-	auto get_opcode() const -> uint8_t
-	{
-		return opcode->code;
-	}
-	auto get_operand1() const -> uint16_t
-	{
-		return op16_r[0];
-	}
-	auto get_operand2() const -> uint16_t
-	{
-		return op16_r[1];
-	}
-	auto get_operand32() const -> int32_t
-	{
-		return op32_r;
+		return !towrite.empty();
 	}
 };
-
-inline auto operator<<(std::ostream& o, OutputTuple& ot) -> std::ostream&
-{
-	return ot.write(o);
-}
 
 class Output{
 	std::ostream& out;
@@ -281,7 +243,7 @@ public:
 			if(!ot.resolve(resolver)){
 				break;	
 			}
-			out << ot;
+			ot.write(out);
 		}
 		buffer.erase(buffer.begin(), it);
 		return buffer.empty();
@@ -333,28 +295,42 @@ public:
 		}
 	}
 
-	auto add_char(int line, const std::vector<std::string>& tok) -> void
+	auto add_char(int line, const char *s) -> void
 	{
 		std::vector<uint8_t> vec;
-		for(auto it = tok.cbegin()+1; it != tok.cend(); it++){
-			const auto& x = *it;
-			if(x[0] == '"'){
-				size_t size = x.size()-1;
-				if(x.back() != '"'){
-					std::cerr << "warning: string literal not closed (line " << 
-					          line << ")" << std::endl;
+		const char *start;
+
+		if((start = strstr(s, "char ")) == NULL){
+			std::cerr << "warning: char command could not be parsed" << std::endl;
+			return;
+		}
+		start += 5;
+
+		while(*start != '\0'){
+			if(isdigit(*start)){
+				int num;
+				char *endptr;
+				num = strtol(start, &endptr, 10);
+				vec.push_back(static_cast<uint8_t>(num));
+				start = endptr;
+			}else if(*start == '"'){
+				start++;
+				while(*start != '\0' && *start != '"'){
+					vec.push_back(*start++);
 				}
-				for(size_t i = 1; i < size; i++){
-					vec.push_back(x[i]);
-					addr++;
+				if(*start == '\0'){
+					std::cerr << "warning: char sequence not terminated!" << std::endl;
+					break;
 				}
+				start++;
 			}else{
-				char *end_ptr;
-				vec.push_back(static_cast<uint8_t>(strtol(x.c_str(), &end_ptr, 10)));
-				addr++;
+				start++;
 			}
 		}
-		buffer.emplace_back(std::move(vec));
+
+		if(!vec.empty()){
+			buffer.emplace_back(std::move(vec));
+		}
 	}
 
 	auto add_int(int line, const std::vector<std::string>& tok) -> void
@@ -369,7 +345,9 @@ public:
 			vec.push_back((value >> 24) & 0xFF);
 			this->addr += 4;
 		});
-		buffer.emplace_back(std::move(vec));
+		if(!vec.empty()){
+			buffer.emplace_back(std::move(vec));
+		}
 	}
 
 	auto add_float(int line, const std::vector<std::string>& tok) -> void
@@ -385,7 +363,9 @@ public:
 			vec.push_back((blub >> 24) & 0xFF);
 			this->addr += 4;
 		});
-		buffer.emplace_back(std::move(vec));
+		if(!vec.empty()){
+			buffer.emplace_back(std::move(vec));
+		}
 	}
 };
 

@@ -10,26 +10,23 @@ auto run(CodeFile& file) -> void
 		&&op_pushi, &&op_add, &&op_sub, &&op_mul,
 		&&op_div, &&op_addi, &&op_pop, &&op_call,
 		&&op_ret, &&op_jc, &&op_jnc, &&op_lstr, &&op_equ,
-		&&ops_neq, &&op_grt, &&op_lrt, &&op_geq, &&op_leq, 
-		&&reg_debug, &&str_debug
+		&&ops_neq, &&op_grt, &&op_lrt, &&op_geq, &&op_leq
 	};
 
-
-	int commands_no = 0;
-	for(auto c: commands){
-		if(c != NULL)
-			commands_no++;
-		else
-			break;
-	}
 	VMState state(file);
 #define	dispatch(A)   state.advance(A);\
 	              goto *commands[state.decode()]
 #define next_instr    dispatch(5)
 
-	for(int i = commands_no; i < 256; i++){
-		commands[i] = &&op_notimplemented;
+	for(int i = 0; i < 256; i++){
+		if(commands[i] == nullptr){
+			commands[i] = &&op_notimplemented;
+		}
 	}
+#ifdef DEBUG
+	commands[254] = &&reg_debug;
+	commands[255] = &&str_debug;
+#endif
 
 	dispatch(0);
 	// VM operations:
@@ -119,8 +116,9 @@ op_jnc:{
 	dispatch(0);
 op_lstr:{
 	if(state.stack.empty())
-			return;
-	state.registers[state.decode1()]= std::string(reinterpret_cast<const char *>(state.file.code()) + state.stack.back().getIntVal());
+		return;
+	const char *str = reinterpret_cast<const char*>(state.file.code()) + state.stack.back().getIntVal();
+	state.registers[state.decode1()]= std::string(str);
 	state.stack.pop_back();
 }
 next_instr;
@@ -160,6 +158,7 @@ op_leq:{
 	state.set_cond(reg1_content <= reg2_content);
 }
 next_instr;
+#ifdef DEBUG
 reg_debug:{
 	int reg1 = state.decode1();
 	int reg2 = state.decode2();
@@ -172,6 +171,7 @@ str_debug:{
 	printf("reg: %d content: %s\n", reg, state.registers[reg].getStringVal().c_str());
 }
 next_instr;
+#endif
 op_notimplemented:{
 	fprintf(stderr, "error: opcode %d not implemented!\n",
 			int(state.decode()));
