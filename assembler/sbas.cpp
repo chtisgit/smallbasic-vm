@@ -69,7 +69,7 @@ auto assemble(istream& in, ostream& out) -> int
 		}else if(tok[0] == "float"){
 			output.add_float(line_n, tok);
 		}else{
-			const auto& op = [&tok]{
+			const auto& op = [&tok]() -> Opcode& {
 				try{
 					return mnemonic_table.at(tok[0]);
 				}catch(std::out_of_range& e){
