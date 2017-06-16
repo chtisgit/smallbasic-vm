@@ -59,7 +59,16 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"grt", {18, 2, OT_REGISTER, OT_REGISTER}},
 	{"lrt", {19, 2, OT_REGISTER, OT_REGISTER}},
 	{"geq", {20, 2, OT_REGISTER, OT_REGISTER}},
-	{"leq", {21, 2, OT_REGISTER, OT_REGISTER}},
+	{"leq", {22, 2, OT_REGISTER, OT_REGISTER}},
+	{"ccat", {23, 2, OT_REGISTER, OT_REGISTER}},
+	{"len", {24, 2, OT_REGISTER, OT_REGISTER}},
+	{"slice", {25, 2, OT_REGISTER, OT_REGISTER}},
+	{"read", {25, 2, OT_REGISTER, OT_REGISTER}},
+	{"write", {25, 2, OT_REGISTER, OT_REGISTER}},
+	{"dim", {26, 2, OT_REGISTER, OT_REGISTER}},
+	{"zero", {27, 2, OT_REGISTER, OT_REGISTER}},
+	{"estr", {28, 2, OT_REGISTER, OT_REGISTER}},
+	{"obj", {128, 2, OT_IMM16, OT_IMM16}},
 	{"reg_debug", {254, 2, OT_REGISTER, OT_REGISTER}},
 	{"str_debug", {255, 1, OT_REGISTER, OT_NO}}
 	};
