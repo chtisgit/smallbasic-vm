@@ -1,5 +1,5 @@
 #include <vector>
-
+#include <functional>
 #include <string>
 #include <tuple>
 #include <iostream>
@@ -9,10 +9,9 @@
 
 class Value{
 private:
-	enum Type{INT, FLOAT, STRING, NONE};
+	enum Type{FLOAT, STRING, NONE};
 	Type type;
-	int int_val;
-	float float_val;
+	double float_val;
 	std::string string_val;
 public:
 
@@ -20,12 +19,7 @@ public:
 		type = NONE;
 	}
 
-	Value(int x){
-		type = INT;
-		int_val = x;		
-	}
-	
-	Value(float x){
+	Value(double x){
 		type = FLOAT;
 		float_val = x;		
 	}
@@ -40,11 +34,8 @@ public:
 
 	void getValue(void *ptr){
 		switch(type){
-		case INT:
-			*((int *)ptr) = getIntVal();
-			break;
 		case FLOAT:
-			*((float *)ptr) = getFloatVal();
+			*((double *)ptr) = getFloatVal();
 			break;
 		case STRING:
 			*((std::string*)ptr) = getStringVal();
@@ -54,44 +45,32 @@ public:
 		}
 	}
 	
-	auto getValue(void) -> std::tuple<int, float, std::string>{
-		return std::make_tuple(int_val, float_val, string_val);	
+	auto getValue(void) -> std::tuple<int, double, const std::string&>{
+		return std::make_tuple(int(float_val), float_val, std::ref(string_val));
 	}
 	
 	int getIntVal(void){
 		switch(type){
-		case INT:
-			return std::get<INT>(getValue());
-			break;
 		case FLOAT:
-			return (int)std::get<FLOAT>(getValue());
-			break;
+			return int(float_val);
 		case STRING:
-			return std::stoi(std::get<STRING>(getValue()), nullptr, 10);
-			break;
+			return std::stoi(string_val, nullptr, 10);
 		case NONE:
 			return 0;
-			break;
 		default:
 			assert(0);
 		}	
 	}
 	
-	float getFloatVal(void){
+	double getFloatVal(void){
 		switch(type){
-		case INT:
-			return (float)std::get<INT>(getValue());
-			break;
 		case FLOAT:
-			return std::get<FLOAT>(getValue());
-			break;
+			return float_val;
 		case STRING:
 			std::string::size_type sz;
-			return std::stof(std::get<STRING>(getValue()), &sz);
-			break;
+			return std::stod(string_val, &sz);
 		case NONE:
 			return 0.0;
-			break;
 		default:
 			assert(0);
 		}
@@ -99,18 +78,12 @@ public:
 
 	std::string getStringVal(void){
 		switch(type){
-		case INT:
-			return std::to_string(std::get<INT>(getValue()));
-			break;
 		case FLOAT:
-			return std::to_string(std::get<FLOAT>(getValue()));
-			break;
+			return std::to_string(float_val);
 		case STRING:
-			return std::get<STRING>(getValue());
-			break;
+			return string_val;
 		case NONE:
 			return "";
-			break;
 		default:
 			assert(0);
 		}
