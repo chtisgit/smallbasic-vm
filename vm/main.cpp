@@ -10,7 +10,10 @@ auto run(CodeFile& file) -> void
 		&&op_pushi, &&op_add, &&op_sub, &&op_mul,
 		&&op_div, &&op_addi, &&op_pop, &&op_call,
 		&&op_ret, &&op_jc, &&op_jnc, &&op_lstr, &&op_equ,
-		&&ops_neq, &&op_grt, &&op_lrt, &&op_geq, &&op_leq
+		&&ops_neq, &&op_grt, &&op_lrt, &&op_geq, &&op_leq, 
+		&&op_ccat, &&op_len, &&op_slice, &&op_read, &&op_write,
+		&&op_dim, &&op_zero, &&op_estr, &&op_obj
+
 	};
 
 	VMState state(file);
@@ -156,6 +159,42 @@ op_leq:{
 	int reg1_content = state.registers[state.decode1()].getIntVal();
 	int reg2_content = state.registers[state.decode2()].getIntVal();
 	state.set_cond(reg1_content <= reg2_content);
+}
+next_instr;
+op_ccat:{
+
+}
+next_instr;
+op_len:{
+
+}
+next_instr;
+op_slice:{
+
+}
+next_instr;
+op_read:{
+
+}
+next_instr;
+op_write:{
+
+}
+next_instr;
+op_dim:{
+
+}
+next_instr;
+op_zero:{
+
+}
+next_instr;
+op_estr:{
+
+}
+next_instr;
+op_obj:{
+
 }
 next_instr;
 #ifdef DEBUG
