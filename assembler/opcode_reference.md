@@ -36,7 +36,7 @@ write   | 26 | 1A | reg | reg | takes an index off the stack, writes the value g
 dim     | 27 | 1B | reg | reg | create an n element (operand 2) array in operand 1. If operand 1 already holds an array, resize it.
 zero    | 28 | 1C | reg | reg | zero the two operands
 estr    | 29 | 1D | reg | reg | load empty strings into both operands
-obj     | 128 | 80 | imm16 | imm16 | make a call to a native object function (specific to smallbasic)
+obj     | 30 | 80 | imm16 | imm16 | make a call to a native object function (specific to smallbasic)
 reg\_debug | 254 | FE | reg | reg | show numeric values of both operands
 str\_debug | 255 | FF | reg | - | show string in operand 1
 
