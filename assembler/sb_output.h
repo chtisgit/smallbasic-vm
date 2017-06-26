@@ -147,7 +147,7 @@ public:
 			try{
 				if(opcode->operands == 1 && opcode->optype1 == OT_IMM32){
 					op32_r = parse_operand32(op1, get_label_addr);
-				}else if(opcode->operands == 2){
+				}else{
 					enum OperandType ot;
 					if(op1.size()){
 						op16_r[0] = parse_operand16(op1, &ot);
@@ -168,28 +168,23 @@ public:
 				towrite.push_back(opcode->code);
 				std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
 				uint32_t temp;
-				switch(opcode->operands){
-				case 0:
-					// write garbage (fall through)
-				case 1:
+
+				if(opcode->operands == 1 && opcode->optype1 == OT_IMM32){
 					temp = op32_r;
 					std::cerr << "op32 = " << temp << std::endl;
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
 					towrite.push_back((temp >> 16) & 0xFF);
 					towrite.push_back((temp >> 24) & 0xFF);
-					break;
-				case 2:
+				}else{
 					temp = op16_r[0];
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
+					std::cerr << "op16[0] = " << temp << std::endl;
 					temp = op16_r[1];
 					towrite.push_back(temp & 0xFF);
 					towrite.push_back((temp >> 8) & 0xFF);
-					break;
-				default:
-					assert(0);
-					break;
+					std::cerr << "op16[1] = " << temp << std::endl;
 				}
 			}catch(std::out_of_range& oor){
 				// this is okay, label is not yet known so don't
