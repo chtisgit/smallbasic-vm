@@ -6,6 +6,23 @@
 #include <string.h>
 #include <assert.h>
 
+class sb_sf{
+private:
+	enum sb_Type{sb_FLOAT, sb_STRING};
+	sb_Type sb_type;
+	double sb_float;
+	std::string sb_string;		
+public:
+	sb_sf(double x){
+		sb_type = sb_FLOAT;
+		sb_float = x;
+	}
+	
+	sb_sf(std::string x){
+		sb_type = sb_STRING;
+		sb_string = x;
+	}
+};
 
 class Value{
 private:
@@ -13,7 +30,15 @@ private:
 	Type type;
 	double float_val;
 	std::string string_val;
+	std::map<int, Value> array;
+	bool a = false;
 public:
+
+	auto operator[](const int i) -> Value&
+	{
+		a = true;
+		return array[i];
+	}
 
 	Value(){
 		type = NONE;
@@ -30,6 +55,18 @@ public:
 	}
 
 	~Value(){
+	}
+
+	int length(void){
+		if(a){
+			return array.rbegin()->first; //"biggest key" = array size
+		}
+		switch(type){
+		case STRING:
+			return string_val.length();
+		default:
+			return 0;
+		}
 	}
 
 	void getValue(void *ptr){

@@ -1,5 +1,5 @@
 #include "state.h"
-
+#include <math.h>
 using namespace std;
 
 
@@ -162,35 +162,50 @@ op_leq:{
 }
 next_instr;
 op_ccat:{
-
+	state.registers[state.decode1()] = state.registers[state.decode1()].getStringVal() 
+										+ state.registers[state.decode2()].getStringVal();
 }
 next_instr;
 op_len:{
-
+	state.registers[state.decode1()] = state.registers[state.decode2()].length();
 }
 next_instr;
 op_slice:{
+	std::string s = state.registers[state.decode1()].getStringVal();
+	int i =  state.registers[state.decode2()].getIntVal();
 
-}
+	if(i >= (int)s.length()){
+		i = s.length() -1;
+	}
+	state.registers[state.decode1()] = i >= 0 ? 
+										s.substr(0, i):
+										s.substr(0, s.length() + i-1);				
+	}
 next_instr;
 op_read:{
-
+	int i = state.stack.back().getIntVal();
+	state.registers[state.decode1()] = state.registers[state.decode2()][i];
+ state.stack.pop_back();
 }
 next_instr;
 op_write:{
-
+	int i = state.stack.back().getIntVal();
+	state.registers[state.decode1()][i] = state.registers[state.decode2()];
+	state.stack.pop_back();
 }
 next_instr;
 op_dim:{
-
+	state.registers[state.decode1()][state.registers[state.decode2()].getIntVal()] = 0.0;
 }
 next_instr;
 op_zero:{
-
+	state.registers[state.decode1()] = 0;
+	state.registers[state.decode2()] = 0;
 }
 next_instr;
 op_estr:{
-
+	state.registers[state.decode1()].getStringVal().clear();
+	state.registers[state.decode2()].getStringVal().clear();
 }
 next_instr;
 op_obj:{
