@@ -46,6 +46,7 @@ auto assemble(istream& in, ostream& out) -> int
 		     istream_iterator<string>(),
 		     back_inserter(tok));
 
+		// add all labels to output and remove them from tok
 		auto first_non_label = find_if(tok.begin(), tok.end(),
 			[](const string& s) -> bool{
 				return !s.empty() && s.back() != ':';
@@ -56,6 +57,15 @@ auto assemble(istream& in, ostream& out) -> int
 			output.add_label(line_n, label);
 		}
 		tok.erase(tok.begin(), first_non_label);
+		
+		// remove comments from tok
+		auto comment = find_if(tok.begin(), tok.end(),
+			[](const string& s) -> bool{
+				return !s.empty() && s.front() == '#';
+			});
+		if(comment != tok.end()){
+			tok.erase(comment, tok.end());
+		}
 
 		if(tok.size() == 0){
 			/* empty line */
