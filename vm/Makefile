@@ -3,18 +3,29 @@ CXX ?= g++
 RM ?= rm
 SHELL ?= /bin/sh
 
-CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -std=c++11 -DDEBUG
-OBJS = main.o 
+CXXFLAGS := $(CXXFLAGS) -O3 -std=c++11
+DEBUGFLAGS := -DDEBUG -g -Wall
+RELEASEFLAGS := -DNDEBUG -s
 
-all: sbvm
+all: release debug
 
-sbvm: $(OBJS)
-	$(CXX) $(LFLAGS) -o $@ $^
+release: clean clean_release sbvm
 
-%.o: %.cpp value.h 
-	$(CXX) $(CXXFLAGS) -c -o $@ $<
+debug: clean clean_debug sbvm_debug
 
-clean:
-	$(RM) *.o sbvm
+sbvm: main.cpp codefile.h state.h value.h object.h obj0_textwindow.h
+	$(CXX) $(LFLAGS) $(CXXFLAGS) $(RELEASEFLAGS) -o $@ main.cpp
 
-.PHONY: all clean
+sbvm_debug: main.cpp codefile.h state.h value.h object.h obj0_textwindow.h
+	$(CXX) $(LFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -o $@ main.cpp
+
+clean: clean_debug clean_release
+	$(RM) *.o
+
+clean_debug:
+	$(RM) sbvm_debug
+
+clean_release:
+	$(RM) sbvm
+
+.PHONY: all clean clean_debug clean_release release debug
