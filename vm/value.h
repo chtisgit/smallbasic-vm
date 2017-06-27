@@ -6,32 +6,23 @@
 #include <string.h>
 #include <assert.h>
 
-class sb_sf{
-private:
-	enum sb_Type{sb_FLOAT, sb_STRING};
-	sb_Type sb_type;
-	double sb_float;
-	std::string sb_string;		
-public:
-	sb_sf(double x){
-		sb_type = sb_FLOAT;
-		sb_float = x;
-	}
-	
-	sb_sf(std::string x){
-		sb_type = sb_STRING;
-		sb_string = x;
-	}
-};
+// the floating point type that the VM should use to
+// represent SmallBasic Floats
+using SBFloat = double;
 
 class Value{
 private:
-	enum Type{FLOAT, STRING, NONE};
+	enum Type{FLOAT, STRING};
 	Type type;
-	double float_val;
+	SBFloat float_val;
 	std::string string_val;
 	std::map<int, Value> array;
 	bool a = false;
+
+	void makeScalar(){
+		a = false;
+		array.clear();
+	}
 public:
 
 	auto operator[](const int i) -> Value&
@@ -41,20 +32,39 @@ public:
 	}
 
 	Value(){
-		type = NONE;
-	}
-
-	Value(double x){
 		type = FLOAT;
-		float_val = x;		
+		float_val = 0;
 	}
 
-	Value(std::string x){
+	Value(SBFloat x){
+		type = FLOAT;
+		float_val = x;
+		string_val = std::to_string(float_val);
+	}
+
+	Value(const std::string& x){
 		type = STRING;
 		string_val = x;		
 	}
+	Value(std::string&& x){
+		type = STRING;
+		string_val = std::move(x);
+	}
 
 	~Value(){
+	}
+
+	void emptyString(){
+		type = STRING;
+		string_val.clear();
+		makeScalar();
+	}
+
+	void zero(){
+		type = FLOAT;
+		float_val = 0;
+		string_val = "0";
+		makeScalar();
 	}
 
 	int length(void){
@@ -69,10 +79,15 @@ public:
 		}
 	}
 
+	void dim(int length){
+		a = true;
+		array[length] = 0;
+	}
+
 	void getValue(void *ptr){
 		switch(type){
 		case FLOAT:
-			*((double *)ptr) = getFloatVal();
+			*((SBFloat *)ptr) = getFloatVal();
 			break;
 		case STRING:
 			*((std::string*)ptr) = getStringVal();
@@ -82,7 +97,7 @@ public:
 		}
 	}
 	
-	auto getValue(void) -> std::tuple<int, double, const std::string&>{
+	auto getValue(void) -> std::tuple<int, SBFloat, const std::string&>{
 		return std::make_tuple(int(float_val), float_val, std::ref(string_val));
 	}
 	
@@ -92,38 +107,25 @@ public:
 			return int(float_val);
 		case STRING:
 			return std::stoi(string_val, nullptr, 10);
-		case NONE:
-			return 0;
 		default:
 			assert(0);
 		}	
 	}
 	
-	double getFloatVal(void){
+	SBFloat getFloatVal(void){
 		switch(type){
 		case FLOAT:
 			return float_val;
 		case STRING:
 			std::string::size_type sz;
 			return std::stod(string_val, &sz);
-		case NONE:
-			return 0.0;
 		default:
 			assert(0);
 		}
 	}
 
-	std::string getStringVal(void){
-		switch(type){
-		case FLOAT:
-			return std::to_string(float_val);
-		case STRING:
-			return string_val;
-		case NONE:
-			return "";
-		default:
-			assert(0);
-		}
+	const std::string& getStringVal(void){
+		return string_val;
 	}
 
 };

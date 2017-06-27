@@ -36,13 +36,13 @@ public:
 	auto advance(int a) -> void
 	{
 		ip += a;
-		assert(ip >= 0 && ip < file.size());
+		assert(ip >= 0 && ip < int(file.size()));
 	}
 
 	auto jump(int a) -> void
 	{
 		ip = a;
-		assert(ip >= 0 && ip < file.size());
+		assert(ip >= 0 && ip < int(file.size()));
 	}
 	
 	auto set_cond(bool c) -> void

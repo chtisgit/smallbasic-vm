@@ -35,7 +35,7 @@ int PauseIfVisible(VMState& state){ return 0; }
 int PauseWithoutMessage(VMState& state){ return 0; }
 int Read(VMState& state)
 {
-	char buf[200], *endptr;
+	char buf[200];
 	bool term = false;
 	std::string str;
 	do{
