@@ -1,5 +1,7 @@
 #include "state.h"
+#include "object.h"
 #include <math.h>
+
 using namespace std;
 
 
@@ -209,7 +211,15 @@ op_estr:{
 }
 next_instr;
 op_obj:{
-
+	auto safety_check = state.file.code();
+	auto obj = state.decode1();
+	auto fun = state.decode2();
+	assert(obj >= 0 && fun >= 0);
+	auto ret = sb_objects[object_id(obj,fun)](state);
+	/* if the called function returns 0 it failed */
+	assert(ret != 0);
+	/* the called instruction must not change the instruction pointer */
+	assert(state.file.code() == safety_check);
 }
 next_instr;
 #ifdef DEBUG

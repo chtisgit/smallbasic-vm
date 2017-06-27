@@ -68,7 +68,7 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"dim", {27, 2, OT_REGISTER, OT_REGISTER}},
 	{"zero", {28, 2, OT_REGISTER, OT_REGISTER}},
 	{"estr", {29, 2, OT_REGISTER, OT_REGISTER}},
-	{"obj", {128, 2, OT_IMM16, OT_IMM16}},
+	{"obj", {30, 2, OT_IMM16, OT_IMM16}},
 	{"reg_debug", {254, 2, OT_REGISTER, OT_REGISTER}},
 	{"str_debug", {255, 1, OT_REGISTER, OT_NO}}
 	};
