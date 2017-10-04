@@ -39,7 +39,7 @@ public:
 
 	Value(int x){
 		type = INT;
-		int_val = 0;
+		int_val = x;
 	}
 
 	Value(SBFloat x){
