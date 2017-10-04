@@ -150,11 +150,11 @@ op_slice:{
 	}
 	dispatch(4);
 op_read:{
-	DSTREG = SRC1REG[SRC2REG];
+	DSTREG = SRC1REG[SRC2REG.getIntVal()];
 	}
 	dispatch(4);
 op_write:{
-	DSTREG[SRC1REG] = SRC2REG;
+	DSTREG[SRC1REG.getIntVal()] = SRC2REG;
 	}
 	dispatch(4);
 op_dim:
