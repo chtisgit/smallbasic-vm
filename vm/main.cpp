@@ -48,7 +48,7 @@ op_copy:
 	DSTREG = SRC1REG;
 	dispatch(3);
 op_movi:
-	DSTREG = IMM16;
+	DSTREG = IMM16;	
 	dispatch(4);
 op_jmp:
 	state.jump(IMM32);
