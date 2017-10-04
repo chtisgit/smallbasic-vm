@@ -30,12 +30,11 @@ auto parse_register(const std::string& s) -> uint8_t
 
 auto parse_operand8(const std::string& s) -> uint8_t
 {
-	if(!isdigit(s[0]) && s[0] != '-'){
+	if(!isdigit(s[0]))
 		throw std::runtime_error(s+" no such register");
-	}
 	// register
 	char *endptr;
-	long v = strtol(s.c_str()+1, &endptr, 10);
+	long v = strtol(s.c_str(), &endptr, 10);
 	if(*endptr != '\0' || v < 0 || v > 255){
 		throw std::runtime_error(s+" no such register");
 	}
