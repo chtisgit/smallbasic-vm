@@ -12,10 +12,11 @@ using SBFloat = double;
 
 class Value{
 private:
-	enum Type{FLOAT, STRING};
+	enum Type{INT, FLOAT, STRING};
 	Type type;
 	SBFloat float_val;
 	std::string string_val;
+	int int_val;
 	std::map<int, Value> array;
 	bool a = false;
 
@@ -34,6 +35,11 @@ public:
 	Value(){
 		type = FLOAT;
 		float_val = 0;
+	}
+
+	Value(int x){
+		type = INT;
+		int_val = 0;
 	}
 
 	Value(SBFloat x){
@@ -63,6 +69,7 @@ public:
 	void zero(){
 		type = FLOAT;
 		float_val = 0;
+		int_val = 0; 
 		string_val = "0";
 		makeScalar();
 	}
@@ -89,6 +96,9 @@ public:
 		case FLOAT:
 			*((SBFloat *)ptr) = getFloatVal();
 			break;
+		case INT:	
+			*((int *)ptr) = getIntVal();
+			break;
 		case STRING:
 			*((std::string*)ptr) = getStringVal();
 			break;
@@ -105,6 +115,8 @@ public:
 		switch(type){
 		case FLOAT:
 			return int(float_val);
+		case INT:
+			return int_val;
 		case STRING:
 			return std::stoi(string_val, nullptr, 10);
 		default:
@@ -116,6 +128,8 @@ public:
 		switch(type){
 		case FLOAT:
 			return float_val;
+		case INT:
+			return (SBFloat)int_val;
 		case STRING:
 			std::string::size_type sz;
 			return std::stod(string_val, &sz);
