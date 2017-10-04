@@ -14,35 +14,53 @@
 #include <cstdint>
 #include <cstring>
 
-auto parse_operand16(const std::string& s, enum OperandType *optype = NULL) -> uint16_t
+auto parse_register(const std::string& s) -> uint8_t
+{
+	if(s[0] != '$'){
+		throw std::runtime_error("invalid operand \""+s+"\"");
+	}
+	// register
+	char *endptr;
+	long v = strtol(s.c_str()+1, &endptr, 10);
+	if(*endptr != '\0' || v < 0 || v > 255){
+		throw std::runtime_error("invalid operand \""+s+"\"");
+	}
+	return uint8_t(v);
+}
+
+auto parse_operand8(const std::string& s) -> uint8_t
+{
+	if(!isdigit(s[0]) && s[0] != '-'){
+		throw std::runtime_error(s+" no such register");
+	}
+	// register
+	char *endptr;
+	long v = strtol(s.c_str()+1, &endptr, 10);
+	if(*endptr != '\0' || v < 0 || v > 255){
+		throw std::runtime_error(s+" no such register");
+	}
+	return uint8_t(v);
+}
+
+
+auto parse_operand16(const std::string& s) -> uint16_t
 {
 	uint16_t rv;
-	if(s[0] == '$'){
-		// register
-		char *endptr;
-		long v = strtol(s.c_str()+1, &endptr, 10);
-		if(*endptr != '\0' || v < 0 || v >= 65536){
-			throw std::runtime_error(s+" no such register");
-		}
-		rv = v;
-		if(optype != NULL) *optype = OT_REGISTER;
-	}else if(isdigit(s[0]) || s[0] == '-'){
-		// immediate 16 bit value 
-		char *endptr;
-		long v = strtol(s.c_str(), &endptr, 10);
-		if(*endptr != '\0'){
-			throw std::runtime_error("invalid operand \""+s+"\"");
-		}else if(v < -32768 || v > 32767){
-			throw std::runtime_error(s+" is out of range for 16 bit immediate");
-		}
-		if(v >= 0){
-			rv = v;
-		}else{
-			rv = 65536+v;
-		}
-		if(optype != NULL) *optype = OT_IMM16;
-	}else{
+	if(!isdigit(s[0]) && s[0] != '-'){
 		throw std::runtime_error("invalid operand \""+s+"\"");
+	}
+	// immediate 16 bit value 
+	char *endptr;
+	long v = strtol(s.c_str(), &endptr, 10);
+	if(*endptr != '\0'){
+		throw std::runtime_error("invalid operand \""+s+"\"");
+	}else if(v < -32768 || v > 32767){
+		throw std::runtime_error(s+" is out of range for 16 bit immediate");
+	}
+	if(v >= 0){
+		rv = v;
+	}else{
+		rv = 65536+v;
 	}
 	return rv;
 }
@@ -79,11 +97,11 @@ struct Label{
 class OutputTuple{
 	const Opcode *const opcode;
 	// op1, op2 .. the operands may be resolved lazily
-	std::string op1, op2;
+	std::vector<std::string> op;
 	// len .. bytes that this output will need
 	unsigned len;
-	// op16_r[0], op16_r[1] or op32_r .. resolved operand(s)
-	uint16_t op16_r[2];
+	// op8_r[] or op32_r .. resolved operand(s)
+	uint16_t op8_r[3];
 	int32_t op32_r;
 	int line;
 	std::vector<uint8_t> towrite;
@@ -103,31 +121,18 @@ class OutputTuple{
 	}
 
 public:
-	OutputTuple(int line, const Opcode *const op, std::string o1 = std::string(), std::string o2 = std::string())
-		: opcode(op), op1(std::move(o1)), op2(std::move(o2)), line(line)
+	OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_)
+		: opcode(op), op(std::move(op_)), line(line)
 	{
-		std::cerr << "opcode=" << int(op->code) << " op1=" << op1 << " op2=" << op2 << std::endl;
+		//std::cerr << "opcode=" << int(op->code) << " op1=" << op1 << " op2=" << op2 << std::endl;
 		// could be different for opcodes with less than 2 operands
-		len = 5;
+		len = op->size_in_bytes;
 	}
 
 	OutputTuple(std::vector<uint8_t>&& vec)
 		: opcode(nullptr), towrite(vec)
 	{
 	}
-
-#if 0
-	OutputTuple(OutputTuple&& ot)
-		: opcode(ot.opcode), op1(ot.op1), op2(ot.op2), len(ot.len)
-	{
-		if(opcode->operands == 2){
-			op16_r[0] = ot.op16_r[0];
-			op16_r[1] = ot.op16_r[1];
-		}else{
-			op32_r = ot.op32_r;
-		}
-	}
-#endif
 
 	auto operator=(OutputTuple ot) -> OutputTuple&
 	{
@@ -145,20 +150,35 @@ public:
 	{
 		if(towrite.empty()){
 			try{
-				if(opcode->operands == 1 && opcode->optype1 == OT_IMM32){
-					op32_r = parse_operand32(op1, get_label_addr);
-				}else{
-					enum OperandType ot;
-					if(op1.size()){
-						op16_r[0] = parse_operand16(op1, &ot);
-						if(ot != opcode->optype1){
-							warning(line,"first",opcode->optype1,ot);
-						}
-					}
-					if(op2.size()){
-						op16_r[1] = parse_operand16(op2, &ot);
-						if(ot != opcode->optype1){
-							warning(line,"second",opcode->optype2,ot);
+				std::vector<uint8_t> temp;
+				if(opcode->operands > 0){
+					int op8_i = 0;
+					for(int i = 0; i < opcode->operands; i++){
+						switch(opcode->optype[i]){
+						case OT_IMM32:
+							op32_r = parse_operand32(op[i], get_label_addr);
+							temp.push_back(op32_r & 0xFF);
+							temp.push_back((op32_r >> 8) & 0xFF);
+							temp.push_back((op32_r >> 16) & 0xFF);
+							temp.push_back((op32_r >> 24) & 0xFF);
+							break;
+						case OT_IMM16:
+							op32_r = parse_operand16(op[i]);
+							temp.push_back(op32_r & 0xFF);
+							temp.push_back((op32_r >> 8) & 0xFF);
+							break;
+						case OT_IMM8:
+							op8_r[op8_i] = parse_operand8(op[i]);
+							temp.push_back(op8_r[op8_i]);
+							op8_i++;
+							break;
+						case OT_REGISTER:
+							op8_r[op8_i] = parse_register(op[i]);
+							temp.push_back(op8_r[op8_i]);
+							op8_i++;
+							break;
+						default:
+							break;
 						}
 					}
 				}
@@ -167,25 +187,7 @@ public:
 
 				towrite.push_back(opcode->code);
 				std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
-				uint32_t temp;
-
-				if(opcode->operands == 1 && opcode->optype1 == OT_IMM32){
-					temp = op32_r;
-					std::cerr << "op32 = " << temp << std::endl;
-					towrite.push_back(temp & 0xFF);
-					towrite.push_back((temp >> 8) & 0xFF);
-					towrite.push_back((temp >> 16) & 0xFF);
-					towrite.push_back((temp >> 24) & 0xFF);
-				}else{
-					temp = op16_r[0];
-					towrite.push_back(temp & 0xFF);
-					towrite.push_back((temp >> 8) & 0xFF);
-					std::cerr << "op16[0] = " << temp << std::endl;
-					temp = op16_r[1];
-					towrite.push_back(temp & 0xFF);
-					towrite.push_back((temp >> 8) & 0xFF);
-					std::cerr << "op16[1] = " << temp << std::endl;
-				}
+				towrite.insert(towrite.end(), temp.begin(), temp.end());
 			}catch(std::out_of_range& oor){
 				// this is okay, label is not yet known so don't
 				// flag as resolved
@@ -204,7 +206,7 @@ public:
 
 	auto needed_label() const -> const std::string&
 	{
-		return op1;
+		return op[0];
 	}
 
 	auto resolved() const -> bool
@@ -252,27 +254,13 @@ public:
 		}
 	}
 
-	auto add_opcode(int line, const Opcode& op, const std::vector<std::string>& tok) -> void
+	auto add_opcode(int line, const Opcode& op, std::vector<std::string> tok) -> void
 	{
-		switch(op.operands){
-		case 0:
-			buffer.emplace_back(line, &op);
-			break;
-		case 1:
-			buffer.emplace_back(line, &op, tok[1]);
-			break;
-		case 2:
-			buffer.emplace_back(line, &op, tok[1], tok[2]);
-			break;
-		default:
-			std::cout << "operands = " << op.operands << std::endl;
-			assert(0);
-			break;
-		}
+		tok.erase(tok.cbegin());
+		buffer.emplace_back(line, &op, tok);
+		assert(op.operands <= 3);
 		
-		// operands parameter would enable using different
-		// opcode sizes here
-		addr += 5;
+		addr += op.size_in_bytes;
 	}
 
 	auto add_label(int line, const std::string& s) -> void
