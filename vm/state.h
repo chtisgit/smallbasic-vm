@@ -79,22 +79,36 @@ public:
 	{
 		uint8_t op = file.code()[ip];
 		return op;
-	}
-
-	auto decode2() -> int16_t
+	}	
+	
+	auto src1() -> int8_t
 	{
 		const auto *c = &file.code()[ip];
-		return (int32_t(c[3])) | (int32_t(c[4]) << 8);
-	}
-
-	auto decode1() -> int16_t
-	{
-		const auto *c = &file.code()[ip];
-		return int32_t(c[1]) | (int32_t(c[2]) << 8);
+		return int32_t(c[2]);
 	
 	}
 
-	auto decode_imm32() -> int32_t
+	auto src2() -> int8_t
+	{
+		const auto *c = &file.code()[ip];
+		return (int32_t(c[3]));
+	
+	}
+
+	auto dst() -> int8_t
+	{
+		const auto *c = &file.code()[ip];
+		return (int32_t(c[1]));
+	
+	}
+
+	auto imm16() -> int16_t
+	{
+		const auto *c = &file.code()[ip];
+		return (int32_t(c[2])) | (int32_t(c[3]) << 8);
+	}
+
+	auto imm32() -> int32_t
 	{
 		const auto *c = &file.code()[ip];
 		return uint32_t(c[1]) | (uint32_t(c[2]) << 8)

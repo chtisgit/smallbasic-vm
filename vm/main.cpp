@@ -2,6 +2,15 @@
 #include "object.h"
 #include <math.h>
 
+#define DST (state.dst())
+#define DSTREG (state.registers[DST])
+#define SRC1 (state.src1())
+#define SRC1REG (state.registers[SRC1])
+#define SRC2 (state.src2())
+#define SRC2REG (state.registers[SRC2])
+#define IMM16 (state.imm16())
+#define IMM32 (state.imm32())
+
 using namespace std;
 
 
@@ -36,162 +45,131 @@ auto run(CodeFile& file) -> void
 	dispatch(0);
 	// VM operations:
 op_copy:
-	state.registers[state.decode1()] = state.registers[state.decode2()];
-	next_instr;
+	DSTREG = SRC1REG;
+	dispatch(3);
 op_movi:
-	state.registers[state.decode1()] = state.decode2();
-	next_instr;
+	DSTREG = IMM16;
+	dispatch(4);
 op_jmp:
-	state.jump(state.decode_imm32());
-	dispatch(0);
+	state.jump(IMM32);
+	dispatch(5);
 op_push:{
-	int reg1 = state.decode1();
-	state.stack.push_back(state.registers[reg1]);
+	state.stack.push_back(DSTREG);
 	}
-	next_instr;
+	dispatch(2);
 op_pushi:
-	state.stack.push_back(state.decode_imm32());
-	next_instr;
+	state.stack.push_back(IMM32);
+	dispatch(5);
 op_add:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	state.registers[reg1] = state.registers[reg1].getIntVal() + state.registers[reg2].getIntVal();
+	DSTREG = SRC1REG.getIntVal() + SRC2REG.getIntVal();
 	}
-	next_instr;
+	dispatch(4);
 op_sub:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	state.registers[reg1] = state.registers[reg1].getIntVal() - state.registers[reg2].getIntVal();
+	DSTREG = SRC1REG.getIntVal() - SRC2REG.getIntVal();
 	}
-	next_instr;
+	dispatch(4);
 op_mul:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	state.registers[reg1] = state.registers[reg1].getIntVal() * state.registers[reg2].getIntVal();
+	DSTREG = SRC1REG.getIntVal() * SRC2REG.getIntVal();
 	}
-	next_instr;
+	dispatch(4);
 op_div:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	state.registers[reg1] = state.registers[reg1].getIntVal() / state.registers[reg2].getIntVal();
+	DSTREG = SRC1REG.getIntVal() / SRC2REG.getIntVal();
 	}
-	next_instr;
+	dispatch(4);
 op_addi:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	state.registers[reg1] = state.registers[reg1].getIntVal() + reg2;
+	DSTREG = SRC1REG.getIntVal() + SRC2;
 	}
-	next_instr;
+	dispatch(4);
 op_pop:{
 	if(state.stack.empty())
 			return;
-	state.registers[state.decode1()]= state.stack.back();
+	DSTREG = state.stack.back();
 	state.stack.pop_back();
 	}
-	next_instr;
+	dispatch(2);
 op_call:{
-	int reg1 = state.decode_imm32();
 	state.advance(5); // saved ip must be next instruction
-	state.call(reg1);
+	state.call(IMM32);
 	}
 	dispatch(0);
 op_ret:
 	if(!state.ret()) return;
 	dispatch(0);
 op_jc:
-	state.conditional_reljump(state.decode_imm32(), 5);
+	state.conditional_reljump(IMM32, 5);
 	dispatch(0);
 op_jnc:
-	state.conditional_reljump(5, state.decode_imm32());
+	state.conditional_reljump(5, IMM32);
 	dispatch(0);
 op_lstr:{
 	if(state.stack.empty())
 		return;
 	const char *str = reinterpret_cast<const char*>(state.file.code()) + state.stack.back().getIntVal();
-	state.registers[state.decode1()]= std::string(str);
+	DSTREG = std::string(str);
 	state.stack.pop_back();
 	}
-	next_instr;
+	dispatch(2);
 op_equ:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content == reg2_content);
+	state.set_cond(SRC1REG.getIntVal() == SRC2REG.getIntVal());
 	}
-	next_instr;
+	dispatch(4);
 ops_neq:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content != reg2_content);
+	state.set_cond(SRC1REG.getIntVal() != SRC2REG.getIntVal());
 	}
-	next_instr;
+	dispatch(4);
 op_grt:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content > reg2_content);
+	state.set_cond(SRC1REG.getIntVal() > SRC2REG.getIntVal());
 	} 
-	next_instr;
+	dispatch(4);
 op_lrt:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content < reg2_content);
+	state.set_cond(SRC1REG.getIntVal() < SRC2REG.getIntVal());
 	}
-	next_instr;
+	dispatch(4);
 op_geq:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content >= reg2_content);
+	state.set_cond(SRC1REG.getIntVal() >= SRC2REG.getIntVal());
 	}
-	next_instr;
+	dispatch(4);
 op_leq:{
-	int reg1_content = state.registers[state.decode1()].getIntVal();
-	int reg2_content = state.registers[state.decode2()].getIntVal();
-	state.set_cond(reg1_content <= reg2_content);
+	state.set_cond(SRC1REG.getIntVal() <= SRC2REG.getIntVal());
 	}
-	next_instr;
+	dispatch(4);
 op_ccat:
-	state.registers[state.decode1()] = state.registers[state.decode1()].getStringVal() 
-										+ state.registers[state.decode2()].getStringVal();
-	next_instr;
+	DSTREG = SRC1REG.getStringVal()	+ SRC2REG.getStringVal();
+	dispatch(4);
 op_len:
-	state.registers[state.decode1()] = state.registers[state.decode2()].length();
-	next_instr;
+	DSTREG = SRC1REG.length();
+	dispatch(3);
 op_slice:{
-	const auto& s = state.registers[state.decode1()].getStringVal();
-	int i =  state.registers[state.decode2()].getIntVal();
+	const auto& s = SRC1REG.getStringVal();
+	int i =  SRC2REG.getIntVal();
 
 	if(i >= (int)s.length()){
 		i = s.length() -1;
 	}
-	state.registers[state.decode1()] = i >= 0 ? s.substr(0, i): s.substr(0, s.length() + i-1);
+	DSTREG = i >= 0 ? s.substr(0, i): s.substr(0, s.length() + i-1);
 	}
-	next_instr;
+	dispatch(4);
 op_read:{
-	int i = state.stack.back().getIntVal();
-	state.registers[state.decode1()] = state.registers[state.decode2()][i];
-	state.stack.pop_back();
+	DSTREG = SRC1REG[SRC2REG];
 	}
-	next_instr;
+	dispatch(4);
 op_write:{
-	int i = state.stack.back().getIntVal();
-	state.registers[state.decode1()][i] = state.registers[state.decode2()];
-	state.stack.pop_back();
+	DSTREG[SRC1REG] = SRC2REG;
 	}
-	next_instr;
+	dispatch(4);
 op_dim:
-	state.registers[state.decode1()].dim(state.registers[state.decode2()].getIntVal());
-	next_instr;
+	DSTREG.dim(SRC1REG.getIntVal());
+	dispatch(3);
 op_zero:
-	state.registers[state.decode1()].zero();
-	state.registers[state.decode2()].zero();
-	next_instr;
+	DSTREG.zero();
+	dispatch(2);
 op_estr:
-	state.registers[state.decode1()].emptyString();
-	state.registers[state.decode2()].emptyString();
-	next_instr;
+	DSTREG.emptyString();
+	dispatch(2);
 op_obj:{
 	auto safety_check = state.file.code();
-	auto obj = state.decode1();
-	auto fun = state.decode2();
+	auto obj = DST;
+	auto fun = SRC1;
 	assert(obj >= 0 && fun >= 0);
 	auto ret = sb_objects[object_id(obj,fun)](state);
 	/* if the called function returns 0 it failed */
@@ -199,21 +177,18 @@ op_obj:{
 	/* the called instruction must not change the instruction pointer */
 	assert(state.file.code() == safety_check);
 	}
-	next_instr;
+	dispatch(3);
 
 #ifdef DEBUG
 reg_debug:{
-	int reg1 = state.decode1();
-	int reg2 = state.decode2();
-	printf("reg: %d content: %d\n", reg1, state.registers[reg1].getIntVal());	
-	printf("reg: %d content: %d\n", reg2, state.registers[reg2].getIntVal());
+	printf("reg: %d content: %d\n", DST, DSTREG.getIntVal());	
+	printf("reg: %d content: %d\n", SRC1, SRC1REG.getIntVal());
 	}
-	next_instr;
+	dispatch(3);
 str_debug:{
-	int reg = state.decode1();	
-	printf("reg: %d content: %s\n", reg, state.registers[reg].getStringVal().c_str());
+	printf("reg: %d content: %s\n", DST, DSTREG.getStringVal().c_str());
 	}
-	next_instr;
+	dispatch(2);
 #endif // DEBUG
 
 op_notimplemented:{
