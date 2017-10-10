@@ -52,7 +52,7 @@ op_movi:
 	dispatch(4);
 op_jmp:
 	state.jump(IMM32);
-	dispatch(5);
+	dispatch(0);
 op_push:{
 	state.stack.push_back(DSTREG);
 	}
