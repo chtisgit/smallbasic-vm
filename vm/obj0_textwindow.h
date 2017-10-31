@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdio>
+#include <termios.h>
+
+#include "value.h"
 
 namespace ObjTextWindow{
 
@@ -30,9 +33,43 @@ int Clear(VMState& state)
 	printf("\f");
 	return 1;
 }
-int Pause(VMState& state){ return 0; }
-int PauseIfVisible(VMState& state){ return 0; }
-int PauseWithoutMessage(VMState& state){ return 0; }
+static void pause(bool msg){
+	static const char PAUSE_MSG[] = "Press any key to continue...";
+	struct termios info;
+	tcgetattr(0, &info);          /* get current terminal attirbutes; 0 is the file descriptor for stdin */
+	auto vtime = info.c_cc[VTIME];
+	auto vmin = info.c_cc[VMIN];
+	info.c_lflag &= ~ICANON;      /* disable canonical mode */
+	info.c_cc[VMIN] = 1;          /* wait until at least one keystroke available */
+	info.c_cc[VTIME] = 0;         /* no timeout */
+	tcsetattr(0, TCSANOW, &info); /* set immediately */
+
+	if(msg){
+		printf("%s\n", PAUSE_MSG);
+	}
+	getchar();
+
+	info.c_lflag |= ICANON;       /* enable canonical mode */
+	info.c_cc[VMIN] = vmin;
+	info.c_cc[VTIME] = vtime;
+	tcsetattr(0, TCSANOW, &info);
+	
+}
+int Pause(VMState& state)
+{
+	pause(true);
+	return 1;
+}
+int PauseIfVisible(VMState& state)
+{
+	pause(true);
+	return 1;
+}
+int PauseWithoutMessage(VMState& state)
+{
+	pause(false);
+	return 1;
+}
 int Read(VMState& state)
 {
 	char buf[200];

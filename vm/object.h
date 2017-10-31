@@ -2,12 +2,21 @@
 
 #include "state.h"
 
+// TODO
+// in future this file should provide an interface for loading
+// arbitrary objects (as shared libraries) and install them
+// in the VM on-the-fly when the ObjectID is first accessed
+//
+// at the moment the implementation of the objects is hard-coded
+
 #include <vector>
 
 using ObjectFunction = int(*)(VMState&);
 using ObjectID = uint_least32_t;
 
 #include "obj0_textwindow.h"
+#include "obj1_array.h"
+#include "obj2_text.h"
 
 constexpr ObjectID object_id(int obj, int fun){
 	static_assert(std::is_unsigned<ObjectID>::value, "");
@@ -41,7 +50,32 @@ std::map<uint_least32_t,ObjectFunction> sb_objects = {
 	{object_id(0,21),ObjTextWindow::ReadKey},
 	{object_id(0,22),ObjTextWindow::ReadNumber},
 	{object_id(0,23),ObjTextWindow::WriteLine},
-	{object_id(0,24),ObjTextWindow::Write}
+	{object_id(0,24),ObjTextWindow::Write},
+
+	// Object 1 - Array
+	{object_id(1,0),ObjArray::ContainsIndex},
+	{object_id(1,1),ObjArray::ContainsValue},
+	{object_id(1,2),ObjArray::GetAllIndices},
+	{object_id(1,3),ObjArray::GetItemCount},
+	{object_id(1,4),ObjArray::IsArray},
+	{object_id(1,5),ObjArray::SetValue},
+	{object_id(1,6),ObjArray::GetValue},
+	{object_id(1,7),ObjArray::RemoveValue},
+
+	// Object 2 - Text
+	{object_id(2,0),ObjText::Append},
+	{object_id(2,1),ObjText::GetLength},
+	{object_id(2,2),ObjText::IsSubText},
+	{object_id(2,3),ObjText::EndsWith},
+	{object_id(2,4),ObjText::StartsWith},
+	{object_id(2,5),ObjText::GetSubText},
+	{object_id(2,6),ObjText::GetSubTextToEnd},
+	{object_id(2,7),ObjText::GetIndexOf},
+	{object_id(2,8),ObjText::ConvertToLowerCase},
+	{object_id(2,9),ObjText::ConvertToUpperCase},
+	{object_id(2,10),ObjText::GetCharacter},
+	{object_id(2,11),ObjText::GetCharacterCode}
+	
 
 };
 
