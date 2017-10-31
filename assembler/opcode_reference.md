@@ -1,14 +1,15 @@
-# Opcode reference for sbas & sbvm;;;;;;
-;;;;;;
-When operand 1 is a register, it is usually the destination (and also a source).;;;;;;
-When operand 2 is a register, it is usually not the destination (not written).;;;;;;
-CF is the condition flag.;;;;;;
-;;;;;;
+# Opcode reference for sbas & sbvm
+
+When operand 1 is a register, it is usually the destination (and also a source).
+When operand 2 is a register, it is usually not the destination (not written).
+CF is the condition flag.
+
 Possible Opcodes:
+
 opcode | dst | src | src
  ----- | ----- | ----- | ----- 
-op;imm16/32;[imm16]
-op;dst;[src];[src]
+op|imm16/32|[imm16]
+op|dst|[src]|[src]
 
 
 Mnemonic | Opcode (dec) | Opcode (hex) |dst| operand 1 | operand 2 | Description
