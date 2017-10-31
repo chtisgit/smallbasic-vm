@@ -28,6 +28,58 @@ private:
 	}
 public:
 
+	// FIXME: this probably needs some fix
+	// for comparisons between FLOATs and INTs at least
+	auto operator==(const Value& rhs) const -> bool
+	{
+		return type == rhs.type &&
+			((type == INT && int_val == rhs.int_val) ||
+			 (type == FLOAT && float_val == rhs.float_val) ||
+			 (type == STRING && string_val == rhs.string_val));
+	}
+
+	auto isArray() const -> bool
+	{
+		return a;
+	}
+
+	auto containsIndex(int i) const -> bool
+	{
+		return isArray() && array.count(i) == 1;
+	}
+
+	auto getValueIndex(const Value& val) const -> int
+	{
+		int index = 0;
+		for(const auto& key_value : array){
+			if(key_value.second == val)
+				return index;
+			index++;
+		}
+		return -1;
+	}
+
+	auto getIndexArray() const -> Value
+	{
+		Value newArr;
+		int index = 1;
+		for(const auto& key_value : array){
+			newArr[index++] = key_value.first;
+		}
+		newArr.a = true;
+		return newArr;
+	}
+
+	auto getItemCount() const -> int
+	{
+		return array.size();
+	}
+
+	auto removeItem(int index) -> void
+	{
+		array.erase(index);
+	}
+
 	auto operator[](const int i) -> Value&
 	{
 		a = true;

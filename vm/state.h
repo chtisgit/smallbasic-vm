@@ -102,10 +102,10 @@ public:
 	
 	}
 
-	auto imm16() -> int16_t
+	auto imm16(int off) -> int16_t
 	{
 		const auto *c = &file.code()[ip];
-		return (int32_t(c[2])) | (int32_t(c[3]) << 8);
+		return (int32_t(c[off+1])) | (int32_t(c[off+2]) << 8);
 	}
 
 	auto imm32() -> int32_t
