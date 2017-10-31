@@ -93,6 +93,20 @@ op_call:{
 	}
 	dispatch(0);
 op_ret:
+	int returnaddress;	
+	if(state.stack.empty())
+			return;
+	returnaddress = state.stack.back().getIntVal();
+	state.stack.pop_back();
+
+	int topop = SRC1REG.getIntVal();
+
+	for(int i=0; i < topop; i++){
+		if(state.stack.empty())
+			return;
+		state.stack.pop_back();
+	}
+
 	if(!state.ret()) return;
 	dispatch(0);
 op_jc:
@@ -146,7 +160,7 @@ op_slice:{
 	if(i >= (int)s.length()){
 		i = s.length() -1;
 	}
-	DSTREG = i >= 0 ? s.substr(0, i): s.substr(0, s.length() + i-1);
+	DSTREG = i >= 0 ? s.substr(0, i): s.substr(s.length()+i, s.length()-1);
 	}
 	dispatch(4);
 op_read:{

@@ -9,7 +9,7 @@ Possible Opcodes:
 opcode | dst | src | src
  ----- | ----- | ----- | ----- 
 op|imm16/32|[imm16]
-op|dst|[src]|[src]
+op|dst|[src]|[src/imm16]
 
 
 Mnemonic | Opcode (dec) | Opcode (hex) |dst| operand 1 | operand 2 | Description
