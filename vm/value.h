@@ -26,6 +26,8 @@ private:
 		a = false;
 		array.clear();
 	}
+
+	friend std::ostream& operator<<(std::ostream &strm, const Value &val);
 public:
 
 	auto operator[](const int i) -> Value&
@@ -140,9 +142,48 @@ public:
 		}
 	}
 
-	const std::string& getStringVal(void){
-		return string_val;
+	const std::string getStringVal(void) const {
+		switch(type){
+		case FLOAT:
+			return std::to_string(float_val);
+		case INT:
+			return std::to_string((SBFloat)int_val);
+		case STRING:
+			return string_val;
+		default:
+			assert(0);
+		}
+	}
+
+	const std::string getType(void) const{
+		if(a)
+			return "ARRAY";
+		switch(type){
+		case FLOAT:
+			return "FLOAT";
+		case INT:
+			return "INT";
+		case STRING:
+			return "STRING";
+		default:
+			assert(0);
+		}
+	}
+	
+	const int isArray(void) const {
+		return a;
 	}
 
 };
+ std::ostream&operator<<(std::ostream &strm, const Value &val){
+	std::string out;
+	if(val.isArray()) {
+		for(const auto &kp : val.array){
+			out += "[" + kp.second.getStringVal()  + "], ";
+		}
+	}else{
+		out = val.getStringVal();
+	}	
+	return strm << out;	
+}
 

@@ -42,7 +42,7 @@ struct Opcode{
 };
 
 std::map<std::string, Opcode> mnemonic_table = {
-	{"copy", {0, 3, 4, {OT_REGISTER, OT_REGISTER, OT_REGISTER}}},
+	{"copy", {0, 2, 3, {OT_REGISTER, OT_REGISTER, OT_NO}}},
 	{"movi", {1, 2, 4, {OT_REGISTER, OT_IMM16, OT_NO}}},
 	{"jmp", {2, 1, 5, {OT_IMM32, OT_NO, OT_NO}}},
 	{"push", {3, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},
@@ -51,7 +51,7 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"sub", {6, 3, 4, {OT_REGISTER, OT_REGISTER, OT_REGISTER}}},
 	{"mul", {7, 3, 4, {OT_REGISTER, OT_REGISTER, OT_REGISTER}}},
 	{"div", {8, 3, 4, {OT_REGISTER, OT_REGISTER, OT_REGISTER}}},
-	{"addi", {9, 2, 5, {OT_REGISTER, OT_IMM16, OT_NO}}},
+	{"addi", {9, 3, 5, {OT_REGISTER, OT_REGISTER, OT_IMM16}}},
 	{"pop", {10, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},
 	{"call", {11, 1, 5, {OT_IMM32, OT_NO, OT_NO}}},
 	{"ret", {12, 1, 3, {OT_IMM16, OT_NO, OT_NO}}},
@@ -73,8 +73,8 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"zero", {28, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},
 	{"estr", {29, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},
 	{"obj", {30, 2, 3, {OT_IMM8, OT_IMM8, OT_NO}}},
-	{"reg_debug", {254, 2, 3, {OT_REGISTER, OT_REGISTER, OT_NO}}},
-	{"str_debug", {255, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}}
+	//{"reg_debug", {254, 2, 3, {OT_REGISTER, OT_REGISTER, OT_NO}}},
+	{"reg_debug", {255, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}}
 };
 
 

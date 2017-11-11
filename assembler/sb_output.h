@@ -45,12 +45,12 @@ auto parse_operand8(const std::string& s) -> uint8_t
 auto parse_operand16(const std::string& s) -> uint16_t
 {
 	uint16_t rv;
-	if(!isdigit(s[0]) && s[0] != '-'){
+	/*if(!isdigit(s[0]) && s[0] != '-'){
 		throw std::runtime_error("invalid operand \""+s+"\"");
-	}
+	}*/
 	// immediate 16 bit value 
 	char *endptr;
-	long v = strtol(s.c_str(), &endptr, 10);
+	long v = strtol(s.c_str(), &endptr, 0);
 	if(*endptr != '\0'){
 		throw std::runtime_error("invalid operand \""+s+"\"");
 	}else if(v < -32768 || v > 32767){

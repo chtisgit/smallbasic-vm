@@ -38,8 +38,8 @@ auto run(CodeFile& file) -> void
 		}
 	}
 #ifdef DEBUG
-	commands[254] = &&reg_debug;
-	commands[255] = &&str_debug;
+	//commands[254] = &&reg_debug;
+	commands[255] = &&reg_debug;//str_debug
 #endif
 
 	dispatch(0);
@@ -79,7 +79,7 @@ op_div:{
 op_addi:{
 	DSTREG = SRC1REG.getIntVal() + SRC2;
 	}
-	dispatch(4);
+	dispatch(5);
 op_pop:{
 	if(state.stack.empty())
 			return;
@@ -88,17 +88,17 @@ op_pop:{
 	}
 	dispatch(2);
 op_call:{
-	state.advance(5); // saved ip must be next instruction
+	//state.advance(5); // saved ip must be next instruction
 	state.call(IMM32);
 	}
 	dispatch(0);
 op_ret:
-	int returnaddress;	
+	/*int returnaddress;	
 	if(state.stack.empty())
 			return;
 	returnaddress = state.stack.back().getIntVal();
 	state.stack.pop_back();
-
+	*/
 	int topop = SRC1REG.getIntVal();
 
 	for(int i=0; i < topop; i++){
@@ -110,10 +110,10 @@ op_ret:
 	if(!state.ret()) return;
 	dispatch(0);
 op_jc:
-	state.conditional_reljump(IMM32, 5);
+	state.conditional_reljump(IMM32, 0);
 	dispatch(0);
 op_jnc:
-	state.conditional_reljump(5, IMM32);
+	state.conditional_reljump(IMM32, 1);
 	dispatch(0);
 op_lstr:{
 	if(state.stack.empty())
@@ -124,29 +124,29 @@ op_lstr:{
 	}
 	dispatch(2);
 op_equ:{
-	state.set_cond(SRC1REG.getIntVal() == SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() == SRC1REG.getIntVal());
 	}
-	dispatch(4);
+	dispatch(3);
 ops_neq:{
-	state.set_cond(SRC1REG.getIntVal() != SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() != SRC1REG.getIntVal());
 	}
-	dispatch(4);
+	dispatch(3);
 op_grt:{
-	state.set_cond(SRC1REG.getIntVal() > SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() > SRC1REG.getIntVal());
 	} 
-	dispatch(4);
+	dispatch(3);
 op_lrt:{
-	state.set_cond(SRC1REG.getIntVal() < SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() < SRC1REG.getIntVal());
 	}
-	dispatch(4);
+	dispatch(3);
 op_geq:{
-	state.set_cond(SRC1REG.getIntVal() >= SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() >= SRC1REG.getIntVal());
 	}
-	dispatch(4);
+	dispatch(3);
 op_leq:{
-	state.set_cond(SRC1REG.getIntVal() <= SRC2REG.getIntVal());
+	state.set_cond(DSTREG.getIntVal() <= SRC1REG.getIntVal());
 	}
-	dispatch(4);
+	dispatch(3);
 op_ccat:
 	DSTREG = SRC1REG.getStringVal()	+ SRC2REG.getStringVal();
 	dispatch(4);
@@ -194,13 +194,14 @@ op_obj:{
 	dispatch(3);
 
 #ifdef DEBUG
-reg_debug:{
+/*reg_debug:{
 	printf("reg: %d content: %d\n", DST, DSTREG.getIntVal());	
 	printf("reg: %d content: %d\n", SRC1, SRC1REG.getIntVal());
 	}
-	dispatch(3);
-str_debug:{
-	printf("reg: %d content: %s\n", DST, DSTREG.getStringVal().c_str());
+	dispatch(3);*/
+reg_debug:{
+	//printf("reg: %d content: %s\n", DST, DSTREG.getStringVal().c_str());
+	std::cout << "reg: " << std::to_string(DST) << " type: " << DSTREG.getType() << " content: " << DSTREG << std::endl;
 	}
 	dispatch(2);
 #endif // DEBUG

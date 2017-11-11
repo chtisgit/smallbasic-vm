@@ -50,26 +50,28 @@ public:
 		cf = c;
 	}
 
-	auto conditional_reljump(int then_addr, int else_addr) -> void
+	auto conditional_reljump(int addr, int n) -> void
 	{
-		if(cf){
-			advance(then_addr);
+		if((cf && n) || (!cf && !n)){
+			advance(5);
 		}else{
-			advance(else_addr);
+			jump(addr); //~reljump lul
 		}
 		cf = false;
 	}
 
 	auto call(int a) -> void
 	{
-		callstack.push_back(ip);
+		callstack.push_back(ip + 5);
 		jump(a);
 	}
 
 	auto ret() -> bool
 	{
-		if(callstack.empty())
+		if(callstack.empty()){	
+			std::cout << ":)" <<std::endl;
 			return false;
+		}
 		jump(callstack.back());
 		callstack.pop_back();
 		return true;
