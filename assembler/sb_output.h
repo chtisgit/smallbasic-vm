@@ -1,6 +1,7 @@
 #pragma once
 
 #include "sb_opcodes.h"
+#include "asmexcept.h"
 
 #include <algorithm>
 #include <iostream>
@@ -102,7 +103,6 @@ class OutputTuple{
 	// op8_r[] or op32_r .. resolved operand(s)
 	uint16_t op8_r[3];
 	int32_t op32_r;
-	int line;
 	std::vector<uint8_t> towrite;
 
 	static auto warning(int line, const char *t, OperandType expected, OperandType actual) -> void
@@ -120,6 +120,7 @@ class OutputTuple{
 	}
 
 public:
+	const int line;
 	OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_)
 		: opcode(op), op(std::move(op_)), line(line)
 	{
@@ -128,8 +129,8 @@ public:
 		len = op->size_in_bytes;
 	}
 
-	OutputTuple(std::vector<uint8_t>&& vec)
-		: opcode(nullptr), towrite(vec)
+	OutputTuple(int line, std::vector<uint8_t>&& vec)
+		: opcode(nullptr), towrite(vec), line(line)
 	{
 	}
 
@@ -185,11 +186,14 @@ public:
 				// flag as resolved by populating towrite
 
 				towrite.push_back(opcode->code);
-				std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
+				//std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
 				towrite.insert(towrite.end(), temp.begin(), temp.end());
 			}catch(std::out_of_range& oor){
 				// this is okay, label is not yet known so don't
 				// flag as resolved
+			}catch(std::runtime_error& rue){
+				// rethrow runtime_error's from this code as AssemblerError's
+				throw AssemblerError(rue.what(),line);
 			}
 		}
 		return resolved();
@@ -248,8 +252,8 @@ public:
 	auto force_write() -> void
 	{
 		if(!write()){
-			const std::string& label = buffer.back().needed_label();
-			throw std::runtime_error("label could not be resolved \""+label+"\"");
+			const std::string& label = buffer.front().needed_label();
+			throw AssemblerError("label could not be resolved \""+label+"\"",buffer.front().line);
 		}
 	}
 
@@ -265,8 +269,8 @@ public:
 	auto add_label(int line, const std::string& s) -> void
 	{
 		if(labels.find(s) != labels.end()){
-			throw std::runtime_error("label '"+s+"' defined (at least) twice (lines "+
-				std::to_string(labels[s].line)+" and "+std::to_string(line)+")");
+			throw AssemblerError("label '"+s+"' defined (at least) twice (first "
+				"appeared in line "+std::to_string(labels[s].line)+")", line);
 		}
 		labels[s] = Label{line, addr};
 
@@ -311,7 +315,7 @@ public:
 		}
 
 		if(!vec.empty()){
-			buffer.emplace_back(std::move(vec));
+			buffer.emplace_back(line,std::move(vec));
 		}
 	}
 
@@ -328,7 +332,7 @@ public:
 			this->addr += 4;
 		});
 		if(!vec.empty()){
-			buffer.emplace_back(std::move(vec));
+			buffer.emplace_back(line,std::move(vec));
 		}
 	}
 
@@ -346,7 +350,7 @@ public:
 			this->addr += 4;
 		});
 		if(!vec.empty()){
-			buffer.emplace_back(std::move(vec));
+			buffer.emplace_back(line,std::move(vec));
 		}
 	}
 };

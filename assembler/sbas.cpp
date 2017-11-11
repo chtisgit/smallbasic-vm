@@ -1,5 +1,6 @@
 #include "sb_opcodes.h"
 #include "sb_output.h"
+#include "asmexcept.h"
 
 #include <algorithm>
 #include <fstream>
@@ -93,10 +94,8 @@ auto assemble(istream& in, ostream& out) -> int
 
 			assert(tok.size() >= 1);
 			if(op.operands != tok.size() - 1){
-				cerr << "error: mnemonic " << tok[0]
-				     << " takes " << op.operands
-				     << " operand(s)" << endl;
-				return 1;
+				throw AssemblerError("mnemonic "+tok[0]+" takes "+
+					std::to_string(op.operands)+" operand(s)", line_n);
 			}
 			output.add_opcode(line_n, op, tok);
 		}
@@ -137,6 +136,9 @@ auto main(int argc, char **argv) -> int
 		}
 	}catch(runtime_error& err){
 		cerr << "error: " << err.what() << endl << endl;
+		rv = 4;
+	}catch(AssemblerError& err){
+		cerr << "error in line " << err.what_line() << ": " << err.what() << endl << endl;
 		rv = 4;
 	}
 	return rv;
