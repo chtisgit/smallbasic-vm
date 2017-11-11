@@ -8,7 +8,7 @@
 #define SRC1REG (state.registers[SRC1])
 #define SRC2 (state.src2())
 #define SRC2REG (state.registers[SRC2])
-#define IMM16 (state.imm16())
+#define IMM16(X) (state.imm16(X))
 #define IMM32 (state.imm32())
 
 using namespace std;
@@ -48,7 +48,7 @@ op_copy:
 	DSTREG = SRC1REG;
 	dispatch(3);
 op_movi:
-	DSTREG = IMM16;	
+	DSTREG = IMM16(1);
 	dispatch(4);
 op_jmp:
 	state.jump(IMM32);
@@ -93,19 +93,10 @@ op_call:{
 	}
 	dispatch(0);
 op_ret:
-	/*int returnaddress;	
-	if(state.stack.empty())
-			return;
-	returnaddress = state.stack.back().getIntVal();
-	state.stack.pop_back();
-	*/
-	int topop = SRC1REG.getIntVal();
-
-	for(int i=0; i < topop; i++){
-		if(state.stack.empty())
-			return;
-		state.stack.pop_back();
+	if(state.stack.size() < IMM16(0)){
+		return;
 	}
+	state.stack.erase(state.stack.end()-IMM16(0),state.stack.end());
 
 	if(!state.ret()) return;
 	dispatch(0);
