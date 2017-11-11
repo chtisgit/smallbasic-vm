@@ -68,10 +68,8 @@ public:
 
 	auto ret() -> bool
 	{
-		if(callstack.empty()){	
-			std::cout << ":)" <<std::endl;
+		if(callstack.empty())	
 			return false;
-		}
 		jump(callstack.back());
 		callstack.pop_back();
 		return true;

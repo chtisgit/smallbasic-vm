@@ -221,10 +221,6 @@ public:
 			assert(0);
 		}
 	}
-	
-	const int isArray(void) const {
-		return a;
-	}
 
 };
  std::ostream&operator<<(std::ostream &strm, const Value &val){
