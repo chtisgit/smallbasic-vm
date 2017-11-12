@@ -50,6 +50,28 @@ auto parse_operand16(const std::string& s) -> uint16_t
 	return rv;
 }
 
+// resolving labels is currently only implemented for op1
+// and it resolves into op32_r
+// this only supports labels in mnemonics with 1 operand
+auto parse_operand32(const std::string& s, LabelDeducer get_label_addr) -> int32_t
+{
+	int32_t rv;
+	if(isdigit(s[0]) || s[0] == '-'){
+		// immediate 32 bit value 
+		char *endptr;
+		long v = strtol(s.c_str(), &endptr, 10);
+		if(*endptr != '\0' || v < INT32_MIN || v > INT32_MAX){
+			throw std::runtime_error(s+" is out of range for 32 bit immediate");
+		}
+		rv = static_cast<uint16_t>(v);
+	}else if(isalpha(s[0]) || s[0] == '_'){
+		rv = get_label_addr(s);
+	}else{
+		throw std::runtime_error("invalid operand \""+s+"\"");
+	}
+	return rv;
+
+}
 
 auto OutputTuple::warning(int line, const char *t, OperandType expected, OperandType actual) -> void
 {
@@ -100,6 +122,58 @@ auto OutputTuple::needed_label() const -> const std::string&
 auto OutputTuple::resolved() const -> bool
 {
 	return !towrite.empty();
+}
+auto OutputTuple::resolve(LabelDeducer get_label_addr) -> bool
+{
+	if(towrite.empty()){
+		try{
+			std::vector<uint8_t> temp;
+			if(opcode->operands > 0){
+				int op8_i = 0;
+				for(int i = 0; i < opcode->operands; i++){
+					switch(opcode->optype[i]){
+					case OT_IMM32:
+						op32_r = parse_operand32(op[i], get_label_addr);
+						temp.push_back(op32_r & 0xFF);
+						temp.push_back((op32_r >> 8) & 0xFF);
+						temp.push_back((op32_r >> 16) & 0xFF);
+						temp.push_back((op32_r >> 24) & 0xFF);
+						break;
+					case OT_IMM16:
+						op32_r = parse_operand16(op[i]);
+						temp.push_back(op32_r & 0xFF);
+						temp.push_back((op32_r >> 8) & 0xFF);
+						break;
+					case OT_IMM8:
+						op8_r[op8_i] = parse_operand8(op[i]);
+						temp.push_back(op8_r[op8_i]);
+						op8_i++;
+						break;
+					case OT_REGISTER:
+						op8_r[op8_i] = parse_register(op[i]);
+						temp.push_back(op8_r[op8_i]);
+						op8_i++;
+						break;
+					default:
+						break;
+					}
+				}
+			}
+			// if the above parse functions didn't throw
+			// flag as resolved by populating towrite
+
+			towrite.push_back(opcode->code);
+			//std::cerr << "towrite opcode=" << int(opcode->code) << std::endl;
+			towrite.insert(towrite.end(), temp.begin(), temp.end());
+		}catch(std::out_of_range& oor){
+			// this is okay, label is not yet known so don't
+			// flag as resolved
+		}catch(std::runtime_error& rue){
+			// rethrow runtime_error's from this code as AssemblerError's
+			throw AssemblerError(rue.what(),line);
+		}
+	}
+	return resolved();
 }
 
 
