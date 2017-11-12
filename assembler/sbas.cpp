@@ -55,7 +55,7 @@ auto assemble(istream& in, ostream& out) -> int
 		for(auto it = tok.begin(); it != first_non_label; it++){
 			auto& label = *it;
 			label.erase(label.end()-1, label.end());
-			output.add_label(line_n, label);
+			output.add_label(line_n, std::move(label));
 		}
 		tok.erase(tok.begin(), first_non_label);
 		

@@ -64,7 +64,7 @@ auto parse_operand32(const std::string& s, LabelDeducer get_label_addr) -> int32
 			throw std::runtime_error(s+" is out of range for 32 bit immediate");
 		}
 		rv = static_cast<uint16_t>(v);
-	}else if(isalpha(s[0]) || s[0] == '_'){
+	}else if(isalpha(s[0]) || s[0] == '_' || s[0] == '.'){
 		rv = get_label_addr(s);
 	}else{
 		throw std::runtime_error("invalid operand \""+s+"\"");
@@ -88,12 +88,19 @@ auto OutputTuple::warning(int line, const char *t, OperandType expected, Operand
 }
 
 
-OutputTuple::OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_)
-	: opcode(op), op(std::move(op_)), line(line)
+OutputTuple::OutputTuple(int line, const Opcode *const opcode, std::vector<std::string> op_, const std::string& most_recent_label)
+	: opcode(opcode), op(std::move(op_)), line(line)
 {
 	//std::cerr << "opcode=" << int(op->code) << " op1=" << op1 << " op2=" << op2 << std::endl;
 	// could be different for opcodes with less than 2 operands
-	len = op->size_in_bytes;
+	len = opcode->size_in_bytes;
+
+	// extend local label short-hand notation
+	for(unsigned i = 0; i < opcode->operands; i++){
+		if(opcode->optype[i] == OT_IMM32 && op[i].size() > 1 && op[i][0] == '.'){
+			op[i] = most_recent_label+op[i];
+		}
+	}
 }
 OutputTuple::OutputTuple(int line, std::vector<uint8_t>&& vec)
 	: opcode(nullptr), towrite(vec), line(line)
@@ -130,7 +137,7 @@ auto OutputTuple::resolve(LabelDeducer get_label_addr) -> bool
 			std::vector<uint8_t> temp;
 			if(opcode->operands > 0){
 				int op8_i = 0;
-				for(int i = 0; i < opcode->operands; i++){
+				for(unsigned i = 0; i < opcode->operands; i++){
 					switch(opcode->optype[i]){
 					case OT_IMM32:
 						op32_r = parse_operand32(op[i], get_label_addr);
@@ -191,6 +198,8 @@ auto Output::write() -> bool
 	auto resolver = [this](const std::string& s) -> int32_t{
 			// this lambda must throw out_of_range if the label
 			// can't be resolved
+			if(s[0] == '.')
+				return this->labels.at(this->most_recent_label+s).addr;
 			return this->labels.at(s).addr;
 		};
 	for(; it != end; it++){
@@ -215,21 +224,27 @@ auto Output::force_write() -> void
 auto Output::add_opcode(int line, const Opcode& op, std::vector<std::string> tok) -> void
 {
 	tok.erase(tok.cbegin());
-	buffer.emplace_back(line, &op, tok);
+	buffer.emplace_back(line, &op, tok, most_recent_label);
 	assert(op.operands <= 3);
 	
 	addr += op.size_in_bytes;
 }
 
-auto Output::add_label(int line, const std::string& s) -> void
+auto Output::add_label(int line, std::string name) -> void
 {
-	if(labels.find(s) != labels.end()){
-		throw AssemblerError("label '"+s+"' defined (at least) twice (first "
-			"appeared in line "+std::to_string(labels[s].line)+")", line);
+	if(name[0] == '.'){
+		name = most_recent_label+name;
+	}else{
+		most_recent_label = name;
 	}
-	labels[s] = Label{line, addr};
 
-	if(!buffer.empty() && buffer.front().needed_label() == s){
+	if(labels.find(name) != labels.end()){
+		throw AssemblerError("label '"+name+"' defined (at least) twice (first "
+			"appeared in line "+std::to_string(labels[name].line)+")", line);
+	}
+	labels[name] = Label{line, addr};
+
+	if(!buffer.empty() && buffer.front().needed_label() == name){
 		// if this label is used in the first command in the
 		// buffer write everything we can
 		write();

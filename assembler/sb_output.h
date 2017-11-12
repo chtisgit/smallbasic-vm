@@ -43,7 +43,7 @@ class OutputTuple{
 
 public:
 	const int line;
-	OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_);
+	OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_, const std::string&);
 	OutputTuple(int line, std::vector<uint8_t>&& vec);
 
 	auto operator=(OutputTuple ot) -> OutputTuple&;
@@ -59,6 +59,9 @@ class Output{
 	std::ostream& out;
 	std::deque<OutputTuple> buffer;
 	std::map<std::string, Label> labels;
+	std::string most_recent_label; 
+	// this is the most recent top-level label (a label
+	// that doesn't start with a dot)
 
 	int32_t addr = 0;
 public:
@@ -67,7 +70,7 @@ public:
 	auto write() -> bool;
 	auto force_write() -> void;
 	auto add_opcode(int line, const Opcode& op, std::vector<std::string> tok) -> void;
-	auto add_label(int line, const std::string& s) -> void;
+	auto add_label(int line, std::string s) -> void;
 	auto add_char(int line, const char *s) -> void;
 	auto add_int(int line, const std::vector<std::string>& tok) -> void;
 	auto add_float(int line, const std::vector<std::string>& tok) -> void;
