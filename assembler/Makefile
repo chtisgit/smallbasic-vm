@@ -3,7 +3,7 @@ CXX ?= g++
 RM ?= rm
 SHELL ?= /bin/sh
 
-CXXFLAGS := $(CXXFLAGS) -g -O3 -Wall -std=c++11 
+CXXFLAGS := $(CXXFLAGS) -g -O0 -Wall -std=c++11 
 OBJS = sbas.o sb_output.o sb_opcodes.o
 
 all: sbas

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <deque>
 #include <map>
+#include <memory>
 #include <vector>
 #include <functional>
 
@@ -39,11 +40,13 @@ class OutputTuple{
 	int32_t op32_r;
 	std::vector<uint8_t> towrite;
 
-	static auto warning(int line, const char *t, OperandType expected, OperandType actual) -> void;
+	static auto warning(const AssemblyFile&, const char *t, OperandType expected, OperandType actual) -> void;
 
 public:
 	const int line;
-	OutputTuple(int line, const Opcode *const op, std::vector<std::string> op_, const std::string&);
+	std::shared_ptr<const std::string> path;
+
+	OutputTuple(const AssemblyFile&, const Opcode *const op, std::vector<std::string> op_, const std::string&);
 	OutputTuple(int line, std::vector<uint8_t>&& vec);
 
 	auto operator=(OutputTuple ot) -> OutputTuple&;
@@ -69,10 +72,10 @@ public:
 
 	auto write() -> bool;
 	auto force_write() -> void;
-	auto add_opcode(int line, const Opcode& op, std::vector<std::string> tok) -> void;
-	auto add_label(int line, std::string s) -> void;
-	auto add_char(int line, const char *s) -> void;
-	auto add_int(int line, const std::vector<std::string>& tok) -> void;
-	auto add_float(int line, const std::vector<std::string>& tok) -> void;
+	auto add_opcode(const AssemblyFile&, const Opcode& op, std::vector<std::string> tok) -> void;
+	auto add_label(const AssemblyFile&, std::string s) -> void;
+	auto add_char(const AssemblyFile&, const char *s) -> void;
+	auto add_int(const AssemblyFile&, const std::vector<std::string>& tok) -> void;
+	auto add_float(const AssemblyFile&, const std::vector<std::string>& tok) -> void;
 };
 

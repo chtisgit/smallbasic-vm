@@ -1,3 +1,4 @@
+#include "sbas.h"
 #include "sb_opcodes.h"
 #include "sb_output.h"
 #include "asmexcept.h"
@@ -22,22 +23,40 @@ auto help(const char *app) -> void
 	     << "default output file: a.out" << endl;
 }
 
-auto assemble(istream& in, ostream& out) -> int
+auto assemble(const char *inputfile, ostream& out) -> int
 {
+
 	constexpr int LINE_LEN = 200;
 	char line[LINE_LEN];
-	int line_n = 0;
 	Output output{out};
 
-	for(;;){
+	// AssemblyFile must have a noexcept move constructor!
+	std::vector<AssemblyFile> includes;
 
-		line_n++;
-		in.getline(line, LINE_LEN);
-		if(in.eof()){
-			break;
+	// main file
+	std::istream* first_input = &cin;
+	if(inputfile == nullptr){
+		inputfile = "<stdin>";
+	}else{
+		first_input = new ifstream(inputfile);
+	}
+	includes.emplace_back(inputfile, 0, first_input);
+
+	while(!includes.empty()){
+		auto& current_file = includes.back();
+
+		current_file.line++;
+		if(!current_file.stream->good()){
+			cerr << "stream is not good.\n";
 		}
-		if(in.fail()){
-			cerr << "error: line " << line_n << " too long!" << endl;
+		current_file.stream->getline(line, LINE_LEN);
+		if(current_file.stream->eof()){
+			includes.pop_back();
+			continue;
+		}
+		if(current_file.stream->fail()){
+			cerr << "error in file " << current_file.path << ": line "
+				<< current_file.line << " too long!" << endl;
 			return 1;
 		}
 		istringstream st{ string(line) };
@@ -55,7 +74,7 @@ auto assemble(istream& in, ostream& out) -> int
 		for(auto it = tok.begin(); it != first_non_label; it++){
 			auto& label = *it;
 			label.erase(label.end()-1, label.end());
-			output.add_label(line_n, std::move(label));
+			output.add_label(current_file, std::move(label));
 		}
 		tok.erase(tok.begin(), first_non_label);
 		
@@ -73,18 +92,28 @@ auto assemble(istream& in, ostream& out) -> int
 			continue;
 		}
 
+		if(tok[0] == "include"){
+			const char *filename = strstr(line, "include")+8;
+			auto *i = static_cast<istream*>(new ifstream(filename));
+			if(i == nullptr){
+				throw AssemblerError(string("could not open included file \"")+filename+"\"",current_file);
+			}
+			includes.emplace_back(filename, 0, i);
+			continue;
+		}
+
 		if(tok[0] == "char"){
-			output.add_char(line_n, line);
+			output.add_char(current_file, line);
 		}else if(tok[0] == "int"){
-			output.add_int(line_n, tok);
+			output.add_int(current_file, tok);
 		}else if(tok[0] == "float"){
-			output.add_float(line_n, tok);
+			output.add_float(current_file, tok);
 		}else{
-			const auto& op = [&tok]() -> Opcode& {
+			const auto& op = [&tok,&current_file]() -> Opcode& {
 				try{
 					return mnemonic_table.at(tok[0]);
 				}catch(std::out_of_range& e){
-					throw std::runtime_error("unknown mnemonic '"+tok[0]+"'");
+					throw AssemblerError("unknown mnemonic '"+tok[0]+"'",current_file);
 				}
 			}();
 
@@ -95,9 +124,9 @@ auto assemble(istream& in, ostream& out) -> int
 			assert(tok.size() >= 1);
 			if(op.operands != tok.size() - 1){
 				throw AssemblerError("mnemonic "+tok[0]+" takes "+
-					std::to_string(op.operands)+" operand(s)", line_n);
+					std::to_string(op.operands)+" operand(s)", current_file);
 			}
-			output.add_opcode(line_n, op, tok);
+			output.add_opcode(current_file, op, tok);
 		}
 	}
 	output.force_write();
@@ -113,21 +142,19 @@ auto main(int argc, char **argv) -> int
 		case 1:
 			{
 			ofstream out("a.out", std::ios_base::out | std::ios_base::binary);
-			rv = assemble(cin, out);
+			rv = assemble(nullptr, out);
 			}
 			break;
 		case 2:
 			{
-			ifstream in(argv[1]);
 			ofstream out("a.out", std::ios_base::out | std::ios_base::binary);
-			rv = assemble(in, out);
+			rv = assemble(argv[1], out);
 			}
 			break;
 		case 3:
 			{
-			ifstream in(argv[1]);
 			ofstream out(argv[2], std::ios_base::out | std::ios_base::binary);
-			rv = assemble(in, out);
+			rv = assemble(argv[1], out);
 			}
 			break;
 		default:
@@ -138,7 +165,8 @@ auto main(int argc, char **argv) -> int
 		cerr << "error: " << err.what() << endl << endl;
 		rv = 4;
 	}catch(AssemblerError& err){
-		cerr << "error in line " << err.what_line() << ": " << err.what() << endl << endl;
+		cerr << "error in file " << err.what_file() << ", line "
+			<< err.what_line() << ": " << err.what() << endl << endl;
 		rv = 4;
 	}
 	return rv;

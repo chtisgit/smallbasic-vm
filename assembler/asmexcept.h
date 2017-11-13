@@ -1,16 +1,26 @@
 #pragma once
+#include "sbas.h"
 
 class AssemblerError : public std::exception{
 	std::string msg;
-	int line_n;
+	std::string path;
+	int line;
 
 public:
-	explicit AssemblerError(const char* message, int N) noexcept
-		: msg(message), line_n(N)
+	explicit AssemblerError(const char* message, const std::string& path, int N) noexcept
+		: msg(message), path(path), line(N)
 	{
 	}
-	explicit AssemblerError(std::string message, int N) noexcept
-		: AssemblerError(message.c_str(),N)
+	explicit AssemblerError(const std::string& message, const std::string& path, int N) noexcept
+		: AssemblerError(message.c_str(),path,N)
+	{
+	}
+	explicit AssemblerError(const char* message, const AssemblyFile& asmfile) noexcept
+		: AssemblerError(message,*asmfile.path,asmfile.line)
+	{
+	}
+	explicit AssemblerError(const std::string& message, const AssemblyFile& asmfile) noexcept
+		: AssemblerError(message.c_str(),*asmfile.path,asmfile.line)
 	{
 	}
 
@@ -23,7 +33,12 @@ public:
 
 	virtual auto what_line() const noexcept -> int
 	{
-		return line_n;
+		return line;
+	}
+
+	virtual auto what_file() const noexcept -> const char*
+	{
+		return path.c_str();
 	}
 };
 

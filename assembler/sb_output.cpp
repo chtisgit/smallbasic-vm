@@ -1,6 +1,5 @@
 #include "sb_output.h"
 
-
 auto parse_register(const std::string& s) -> uint8_t
 {
 	if(s[0] != '$'){
@@ -73,23 +72,25 @@ auto parse_operand32(const std::string& s, LabelDeducer get_label_addr) -> int32
 
 }
 
-auto OutputTuple::warning(int line, const char *t, OperandType expected, OperandType actual) -> void
+auto OutputTuple::warning(const AssemblyFile& asmfile, const char *t, OperandType expected, OperandType actual) -> void
 {
 	if(expected != actual){
 		if(expected == OT_REGISTER)
-			std::cerr << "warning: " << t << " operand should be "
+			std::cerr << "warning in file " << asmfile.path << ": "
+				<< t << " operand should be "
 				"register (immediate given) in line " <<
-				line << std::endl;
+				asmfile.line << std::endl;
 		else
-			std::cerr << "warning: " << t << " operand should be "
+			std::cerr << "warning in file " << asmfile.path << ": " 
+				<< t << " operand should be "
 				"immediate (register given) in line " << 
-				line << std::endl;
+				asmfile.line << std::endl;
 	}
 }
 
 
-OutputTuple::OutputTuple(int line, const Opcode *const opcode, std::vector<std::string> op_, const std::string& most_recent_label)
-	: opcode(opcode), op(std::move(op_)), line(line)
+OutputTuple::OutputTuple(const AssemblyFile& asmfile, const Opcode *const opcode, std::vector<std::string> op_, const std::string& most_recent_label)
+	: opcode(opcode), op(std::move(op_)), line(asmfile.line), path(asmfile.path)
 {
 	//std::cerr << "opcode=" << int(op->code) << " op1=" << op1 << " op2=" << op2 << std::endl;
 	// could be different for opcodes with less than 2 operands
@@ -177,7 +178,7 @@ auto OutputTuple::resolve(LabelDeducer get_label_addr) -> bool
 			// flag as resolved
 		}catch(std::runtime_error& rue){
 			// rethrow runtime_error's from this code as AssemblerError's
-			throw AssemblerError(rue.what(),line);
+			throw AssemblerError(rue.what(),*path,line);
 		}
 	}
 	return resolved();
@@ -217,20 +218,20 @@ auto Output::force_write() -> void
 {
 	if(!write()){
 		const std::string& label = buffer.front().needed_label();
-		throw AssemblerError("label could not be resolved \""+label+"\"",buffer.front().line);
+		throw AssemblerError("label could not be resolved \""+label+"\"",*buffer.front().path,buffer.front().line);
 	}
 }
 
-auto Output::add_opcode(int line, const Opcode& op, std::vector<std::string> tok) -> void
+auto Output::add_opcode(const AssemblyFile& asmfile, const Opcode& op, std::vector<std::string> tok) -> void
 {
 	tok.erase(tok.cbegin());
-	buffer.emplace_back(line, &op, tok, most_recent_label);
+	buffer.emplace_back(asmfile, &op, tok, most_recent_label);
 	assert(op.operands <= 3);
 	
 	addr += op.size_in_bytes;
 }
 
-auto Output::add_label(int line, std::string name) -> void
+auto Output::add_label(const AssemblyFile& asmfile, std::string name) -> void
 {
 	if(name[0] == '.'){
 		name = most_recent_label+name;
@@ -240,9 +241,9 @@ auto Output::add_label(int line, std::string name) -> void
 
 	if(labels.find(name) != labels.end()){
 		throw AssemblerError("label '"+name+"' defined (at least) twice (first "
-			"appeared in line "+std::to_string(labels[name].line)+")", line);
+			"appeared in line "+std::to_string(labels[name].line)+")", asmfile);
 	}
-	labels[name] = Label{line, addr};
+	labels[name] = Label{asmfile.line, addr};
 
 	if(!buffer.empty() && buffer.front().needed_label() == name){
 		// if this label is used in the first command in the
@@ -251,7 +252,7 @@ auto Output::add_label(int line, std::string name) -> void
 	}
 }
 
-auto Output::add_char(int line, const char *s) -> void
+auto Output::add_char(const AssemblyFile& asmfile, const char *s) -> void
 {
 	std::vector<uint8_t> vec;
 	const char *start;
@@ -285,11 +286,11 @@ auto Output::add_char(int line, const char *s) -> void
 	}
 
 	if(!vec.empty()){
-		buffer.emplace_back(line,std::move(vec));
+		buffer.emplace_back(asmfile.line,std::move(vec));
 	}
 }
 
-auto Output::add_int(int line, const std::vector<std::string>& tok) -> void
+auto Output::add_int(const AssemblyFile& asmfile, const std::vector<std::string>& tok) -> void
 {
 	std::vector<uint8_t> vec;
 	std::for_each(tok.cbegin()+1, tok.cend(), [&vec,this](const std::string& x){
@@ -302,11 +303,11 @@ auto Output::add_int(int line, const std::vector<std::string>& tok) -> void
 		this->addr += 4;
 	});
 	if(!vec.empty()){
-		buffer.emplace_back(line,std::move(vec));
+		buffer.emplace_back(asmfile.line,std::move(vec));
 	}
 }
 
-auto Output::add_float(int line, const std::vector<std::string>& tok) -> void
+auto Output::add_float(const AssemblyFile& asmfile, const std::vector<std::string>& tok) -> void
 {
 	std::vector<uint8_t> vec;
 	std::for_each(tok.cbegin()+1, tok.cend(), [&vec,this](const std::string& x){
@@ -320,6 +321,6 @@ auto Output::add_float(int line, const std::vector<std::string>& tok) -> void
 		this->addr += 4;
 	});
 	if(!vec.empty()){
-		buffer.emplace_back(line,std::move(vec));
+		buffer.emplace_back(asmfile.line,std::move(vec));
 	}
 }
