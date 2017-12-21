@@ -98,7 +98,7 @@ extern "C"{
 
 	/* exported symbols */
 
-	const void *Object0Functions[] = {
+	const void *Object1Functions[] = {
 		reinterpret_cast<void*>(ObjArray::ContainsIndex),
 		reinterpret_cast<void*>(ObjArray::ContainsValue),
 		reinterpret_cast<void*>(ObjArray::GetAllIndices),
@@ -110,7 +110,7 @@ extern "C"{
 		nullptr
 	};
 
-	const char *Object0FunctionNames[] = {
+	const char *Object1FunctionNames[] = {
 		nullptr
 	};
 
