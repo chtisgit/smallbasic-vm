@@ -1,6 +1,4 @@
-#pragma once
-
-#include "value.h"
+#include <state.h>
 
 namespace ObjArray{
 
@@ -95,4 +93,27 @@ int RemoveValue(VMState& state)
 }
 
 };
+
+extern "C"{
+
+	/* exported symbols */
+
+	const void *Object0Functions[] = {
+		reinterpret_cast<void*>(ObjArray::ContainsIndex),
+		reinterpret_cast<void*>(ObjArray::ContainsValue),
+		reinterpret_cast<void*>(ObjArray::GetAllIndices),
+		reinterpret_cast<void*>(ObjArray::GetItemCount),
+		reinterpret_cast<void*>(ObjArray::IsArray),
+		reinterpret_cast<void*>(ObjArray::SetValue),
+		reinterpret_cast<void*>(ObjArray::GetValue),
+		reinterpret_cast<void*>(ObjArray::RemoveValue),
+		nullptr
+	};
+
+	const char *Object0FunctionNames[] = {
+		nullptr
+	};
+
+}
+
 

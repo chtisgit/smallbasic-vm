@@ -16,6 +16,8 @@ using namespace std;
 
 auto run(CodeFile& file) -> void
 {
+	ObjectCollection objs;
+
 	void *commands[256] = {
 		&&op_copy, &&op_movi, &&op_jmp, &&op_push,
 		&&op_pushi, &&op_add, &&op_sub, &&op_mul,
@@ -182,7 +184,7 @@ op_obj:{
 	auto obj = DST;
 	auto fun = SRC1;
 	assert(obj >= 0 && fun >= 0);
-	auto ret = sb_objects[object_id(obj,fun)](state);
+	auto ret = objs.Call(obj,fun,state);
 	/* if the called function returns 0 it failed */
 	assert(ret != 0);
 	/* the called instruction must not change the instruction pointer */

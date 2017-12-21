@@ -1,9 +1,7 @@
-#pragma once
-
 #include <cstdio>
 #include <termios.h>
 
-#include "value.h"
+#include <state.h>
 
 namespace ObjTextWindow{
 
@@ -128,4 +126,44 @@ int Write(VMState& state)
 
 
 };
+
+extern "C"{
+
+	/* exported symbols */
+
+	const void *Object0Functions[] = {
+		reinterpret_cast<void*>(ObjTextWindow::ForegroundColorSet),
+		reinterpret_cast<void*>(ObjTextWindow::ForegroundColorGet),
+		reinterpret_cast<void*>(ObjTextWindow::BackgroundColorSet),
+		reinterpret_cast<void*>(ObjTextWindow::BackgroundColorGet),
+		reinterpret_cast<void*>(ObjTextWindow::CursorLeftSet),
+		reinterpret_cast<void*>(ObjTextWindow::CursorLeftGet),
+		reinterpret_cast<void*>(ObjTextWindow::CursorTopSet),
+		reinterpret_cast<void*>(ObjTextWindow::CursorTopGet),
+		reinterpret_cast<void*>(ObjTextWindow::LeftSet),
+		reinterpret_cast<void*>(ObjTextWindow::LeftGet),
+		reinterpret_cast<void*>(ObjTextWindow::TopSet),
+		reinterpret_cast<void*>(ObjTextWindow::TopGet),
+		reinterpret_cast<void*>(ObjTextWindow::TitleSet),
+		reinterpret_cast<void*>(ObjTextWindow::TitleGet),
+		reinterpret_cast<void*>(ObjTextWindow::Show),
+		reinterpret_cast<void*>(ObjTextWindow::Hide),
+		reinterpret_cast<void*>(ObjTextWindow::Clear),
+		reinterpret_cast<void*>(ObjTextWindow::Pause),
+		reinterpret_cast<void*>(ObjTextWindow::PauseIfVisible),
+		reinterpret_cast<void*>(ObjTextWindow::PauseWithoutMessage),
+		reinterpret_cast<void*>(ObjTextWindow::Read),
+		reinterpret_cast<void*>(ObjTextWindow::ReadKey),
+		reinterpret_cast<void*>(ObjTextWindow::ReadNumber),
+		reinterpret_cast<void*>(ObjTextWindow::WriteLine),
+		reinterpret_cast<void*>(ObjTextWindow::Write),
+		nullptr
+	};
+
+	const char *Object0FunctionNames[] = {
+		nullptr
+	};
+
+}
+
 

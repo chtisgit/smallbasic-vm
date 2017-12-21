@@ -1,81 +1,120 @@
 #pragma once
+#include <map>
+#include <cstdio>
+#include <cstdlib>
+#include <climits>
+#include <unistd.h>
+#include <dlfcn.h>
 
-#include "state.h"
+#define OBJECT_FILENAME_PREFIX		"object"
+#define OBJ_REL_PATH			"../objects/"
 
-// TODO
-// in future this file should provide an interface for loading
-// arbitrary objects (as shared libraries) and install them
-// in the VM on-the-fly when the ObjectID is first accessed
-//
-// at the moment the implementation of the objects is hard-coded
+class VMState;
 
-#include <vector>
+struct ObjectCollection{
+	using ID = uint_least32_t;
+	using ObjectFunction = int(*)(VMState&);
 
-using ObjectFunction = int(*)(VMState&);
-using ObjectID = uint_least32_t;
+	static constexpr ID GetID(int obj, int fun){
+		static_assert(std::is_unsigned<ID>::value, "");
+		return (ID(fun) << 16) | ID(obj);
+	}
 
-#include "obj0_textwindow.h"
-#include "obj1_array.h"
-#include "obj2_text.h"
+	static constexpr int Major(ID id){
+		return id & 0xFFFF;
+	}
 
-constexpr ObjectID object_id(int obj, int fun){
-	static_assert(std::is_unsigned<ObjectID>::value, "");
-	return (ObjectID(fun) << 16) | ObjectID(obj);
-}
+	static constexpr int Minor(ID id){
+		return id >> 16;
+	}
 
-std::map<uint_least32_t,ObjectFunction> sb_objects = {
+	~ObjectCollection()
+	{
+		UnloadAll();
+	}
 
-	// Object 0 - TextWindow
-	{object_id(0,0),ObjTextWindow::ForegroundColorSet},
-	{object_id(0,1),ObjTextWindow::ForegroundColorGet},
-	{object_id(0,2),ObjTextWindow::BackgroundColorSet},
-	{object_id(0,3),ObjTextWindow::BackgroundColorGet},
-	{object_id(0,4),ObjTextWindow::CursorLeftSet},
-	{object_id(0,5),ObjTextWindow::CursorLeftGet},
-	{object_id(0,6),ObjTextWindow::CursorTopSet},
-	{object_id(0,7),ObjTextWindow::CursorTopGet},
-	{object_id(0,8),ObjTextWindow::LeftSet},
-	{object_id(0,9),ObjTextWindow::LeftGet},
-	{object_id(0,10),ObjTextWindow::TopSet},
-	{object_id(0,11),ObjTextWindow::TopGet},
-	{object_id(0,12),ObjTextWindow::TitleSet},
-	{object_id(0,13),ObjTextWindow::TitleGet},
-	{object_id(0,14),ObjTextWindow::Show},
-	{object_id(0,15),ObjTextWindow::Hide},
-	{object_id(0,16),ObjTextWindow::Clear},
-	{object_id(0,17),ObjTextWindow::Pause},
-	{object_id(0,18),ObjTextWindow::PauseIfVisible},
-	{object_id(0,19),ObjTextWindow::PauseWithoutMessage},
-	{object_id(0,20),ObjTextWindow::Read},
-	{object_id(0,21),ObjTextWindow::ReadKey},
-	{object_id(0,22),ObjTextWindow::ReadNumber},
-	{object_id(0,23),ObjTextWindow::WriteLine},
-	{object_id(0,24),ObjTextWindow::Write},
+	auto Load(int obj) -> void
+	{
+		auto path = ObjPath()+OBJECT_FILENAME_PREFIX+std::to_string(obj)+".so";
+		void* lib = dlopen(path.c_str(),RTLD_LAZY);
+		if(lib == nullptr){
+			printf("fatal error: cannot find shared library for object %d\n",obj);
+			abort();
+		}
+		void **functions;
+		char **names;
+		char sym[40];
+		sprintf(sym,"Object%dFunctions",obj);
+		functions = static_cast<void**>(dlsym(lib, sym));
+		sprintf(sym,"Object%dFunctionNames",obj);
+		names = static_cast<char**>(dlsym(lib, sym));
+		if(functions == nullptr || names == nullptr){
+			printf("fatal error: cannot load shared library for object %d\n",obj);
+			abort();
+		}
 
-	// Object 1 - Array
-	{object_id(1,0),ObjArray::ContainsIndex},
-	{object_id(1,1),ObjArray::ContainsValue},
-	{object_id(1,2),ObjArray::GetAllIndices},
-	{object_id(1,3),ObjArray::GetItemCount},
-	{object_id(1,4),ObjArray::IsArray},
-	{object_id(1,5),ObjArray::SetValue},
-	{object_id(1,6),ObjArray::GetValue},
-	{object_id(1,7),ObjArray::RemoveValue},
+		int fun;
+		for(fun = 0; fun <= 0xFFFF && functions[fun] != nullptr; fun++){
+			funcs[GetID(obj,fun)] = reinterpret_cast<ObjectFunction>(functions[fun]);
+		}
+		if(fun == 0xFFFF){
+			printf("fatal error: cannot load shared library for object %d\n",obj);
+			abort();
+		}
 
-	// Object 2 - Text
-	{object_id(2,0),ObjText::Append},
-	{object_id(2,1),ObjText::GetLength},
-	{object_id(2,2),ObjText::IsSubText},
-	{object_id(2,3),ObjText::EndsWith},
-	{object_id(2,4),ObjText::StartsWith},
-	{object_id(2,5),ObjText::GetSubText},
-	{object_id(2,6),ObjText::GetSubTextToEnd},
-	{object_id(2,7),ObjText::GetIndexOf},
-	{object_id(2,8),ObjText::ConvertToLowerCase},
-	{object_id(2,9),ObjText::ConvertToUpperCase},
-	{object_id(2,10),ObjText::GetCharacter},
-	{object_id(2,11),ObjText::GetCharacterCode}
-	
+		openlibs[obj] = lib;
+	}
+
+	auto UnloadAll() -> void
+	{
+		for(auto& p : openlibs){
+			dlclose(p.second);
+		}
+	}
+
+	auto Call(int obj, int fun, VMState& state) -> int
+	{
+		try{
+			return funcs.at(GetID(obj,fun))(state);
+		}catch(std::out_of_range& e){
+			Load(obj);
+			return funcs[GetID(obj,fun)](state);
+		}
+	}
+
+	static auto ObjPath() -> const std::string&
+	{
+		static std::string ownpath;
+
+#ifdef OBJ_LIBS_PATH
+		if(ownpath.size() == 0){
+			ownpath = OBJ_LIBS_PATH;
+		}
+#else
+		if(ownpath.size() == 0){
+#ifndef __unix__
+#warning "ObjPath: no implementation for non-unix systems"
+#else // __unix__
+			char buf[50];
+			char path[PATH_MAX+1];
+			sprintf(buf,"/proc/%d/exe",getpid());
+			auto i = readlink(buf, path, PATH_MAX);
+			path[i] = '\0';
+			ownpath = path;
+			ownpath.erase(ownpath.rfind('/')+1);
+			ownpath += OBJ_REL_PATH;
+#endif
+		}
+#endif
+		return ownpath;
+	}
+private:
+	std::map<ID,ObjectFunction> funcs;
+
+	// map of object id to shared library handle
+	std::map<int,void*> openlibs;
 
 };
 
+static_assert(ObjectCollection::Major(ObjectCollection::GetID(0xC0FF,0xFEFE)) == 0xC0FFu, "");
+static_assert(ObjectCollection::Minor(ObjectCollection::GetID(0xC0FF,0xFEFE)) == 0xFEFEu, "");

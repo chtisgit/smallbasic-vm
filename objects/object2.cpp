@@ -1,8 +1,6 @@
-#pragma once
-
 #include <cstdio>
 
-#include "value.h"
+#include <state.h>
 
 namespace ObjText{
 
@@ -143,3 +141,31 @@ int GetCharacterCode(VMState& state){
 }
 
 }
+
+extern "C"{
+
+	/* exported symbols */
+
+	const void *Object2Functions[] = {
+		reinterpret_cast<void*>(ObjText::Append),
+		reinterpret_cast<void*>(ObjText::GetLength),
+		reinterpret_cast<void*>(ObjText::IsSubText),
+		reinterpret_cast<void*>(ObjText::EndsWith),
+		reinterpret_cast<void*>(ObjText::StartsWith),
+		reinterpret_cast<void*>(ObjText::GetSubText),
+		reinterpret_cast<void*>(ObjText::GetSubTextToEnd),
+		reinterpret_cast<void*>(ObjText::GetIndexOf),
+		reinterpret_cast<void*>(ObjText::ConvertToLowerCase),
+		reinterpret_cast<void*>(ObjText::ConvertToUpperCase),
+		reinterpret_cast<void*>(ObjText::GetCharacter),
+		reinterpret_cast<void*>(ObjText::GetCharacterCode),
+		nullptr
+	};
+
+	const char *Object2FunctionNames[] = {
+		nullptr
+	};
+
+}
+
+

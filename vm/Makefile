@@ -7,17 +7,19 @@ CXXFLAGS := $(CXXFLAGS) -O3 -std=c++11
 DEBUGFLAGS := -DDEBUG -g -Wall
 RELEASEFLAGS := -DNDEBUG -s
 
+LIBS = -ldl
+
 all: release debug
 
 release: clean clean_release sbvm
 
 debug: clean clean_debug sbvm_debug
 
-sbvm: main.cpp codefile.h state.h value.h object.h obj0_textwindow.h
-	$(CXX) $(LFLAGS) $(CXXFLAGS) $(RELEASEFLAGS) -o $@ main.cpp
+sbvm: main.cpp codefile.h state.h value.h object.h
+	$(CXX) $(LFLAGS) $(CXXFLAGS) $(RELEASEFLAGS) -o $@ main.cpp $(LIBS)
 
-sbvm_debug: main.cpp codefile.h state.h value.h object.h obj0_textwindow.h
-	$(CXX) $(LFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -o $@ main.cpp
+sbvm_debug: main.cpp codefile.h state.h value.h object.h
+	$(CXX) $(LFLAGS) $(CXXFLAGS) $(DEBUGFLAGS) -o $@ main.cpp $(LIBS)
 
 clean: clean_debug clean_release
 	$(RM) *.o
