@@ -115,27 +115,33 @@ op_lstr:{
 	}
 	dispatch(2);
 op_equ:{
-	state.set_cond(DSTREG.getIntVal() == SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() == SRC1REG.getIntVal())
+		state.set_cond(true);
 	}
 	dispatch(3);
 ops_neq:{
-	state.set_cond(DSTREG.getIntVal() != SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() != SRC1REG.getIntVal())
+		state.set_cond(true);
 	}
 	dispatch(3);
 op_grt:{
-	state.set_cond(DSTREG.getIntVal() > SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() > SRC1REG.getIntVal())
+		state.set_cond(true);
 	} 
 	dispatch(3);
 op_lrt:{
-	state.set_cond(DSTREG.getIntVal() < SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() < SRC1REG.getIntVal())
+		state.set_cond(true);
 	}
 	dispatch(3);
 op_geq:{
-	state.set_cond(DSTREG.getIntVal() >= SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() >= SRC1REG.getIntVal())
+		state.set_cond(true);
 	}
 	dispatch(3);
 op_leq:{
-	state.set_cond(DSTREG.getIntVal() <= SRC1REG.getIntVal());
+	if(DSTREG.getIntVal() <= SRC1REG.getIntVal())
+		state.set_cond(true);
 	}
 	dispatch(3);
 op_ccat:

@@ -1,4 +1,5 @@
 #include "sb_output.h"
+#include <cstdio>
 
 auto parse_register(const std::string& s) -> uint8_t
 {
@@ -287,6 +288,7 @@ auto Output::add_char(const AssemblyFile& asmfile, const char *s) -> void
 
 	if(!vec.empty()){
 		buffer.emplace_back(asmfile.line,std::move(vec));
+		addr += vec.size();
 	}
 }
 

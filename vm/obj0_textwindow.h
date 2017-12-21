@@ -122,6 +122,7 @@ int Write(VMState& state)
 	auto str = state.stack.back();
 	state.stack.pop_back();
 	printf("%s", str.getStringVal().c_str());
+	fflush(stdout);
 	return 1;
 }
 
