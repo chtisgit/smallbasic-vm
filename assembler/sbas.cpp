@@ -46,8 +46,9 @@ auto assemble(const char *inputfile, ostream& out) -> int
 		auto& current_file = includes.back();
 
 		current_file.line++;
-		if(!current_file.stream->good()){
-			cerr << "stream is not good.\n";
+		if(current_file.stream->fail()){
+			cerr << "failed to read from file " << *current_file.path << endl;
+			break;
 		}
 		current_file.stream->getline(line, LINE_LEN);
 		if(current_file.stream->eof()){

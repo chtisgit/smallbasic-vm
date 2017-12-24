@@ -20,7 +20,7 @@ public:
 	{
 	}
 	explicit AssemblerError(const std::string& message, const AssemblyFile& asmfile) noexcept
-		: AssemblerError(message.c_str(),*asmfile.path,asmfile.line)
+		: AssemblerError(message.c_str(),asmfile)
 	{
 	}
 
