@@ -45,7 +45,12 @@ addi $1 $1 1 #i++
 
 
 #display arraycontents
-reg_debug $10
+pushi BeforeStr
+lstr $137
+push $137
+obj 0 23 # TextWindow.WriteLine
+
+call printarray
 
 
 pushi 0
@@ -54,7 +59,12 @@ call sort
 pop $1
 pop $1
 #print sorted array
-reg_debug $10
+pushi AfterStr
+lstr $137
+push $137
+obj 0 23 # TextWindow.WriteLine
+call printarray
+#reg_debug $10
 
 ret 0 # end program (return on empty stack)
 
@@ -178,34 +188,7 @@ ilrtr:
 
 ret 0
 
+include printarray.asm
 
-
-str: char "Hallo Welt!" 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+BeforeStr: char "Before sort:" 0
+AfterStr: char "After sort:" 0

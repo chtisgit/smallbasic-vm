@@ -1,5 +1,3 @@
-#pushi str # push address of NUL-terminated string
-#lstr $2 # load string into register 2
 movi $3 5
 movi $4 -5
 movi $5 3
@@ -27,20 +25,26 @@ addi $1 $1 1 #i++
 movi $1 0 #i
 movi $11 0 #j
 #display arraycontents
-reg_debug $10
-
+pushi BeforeStr
+lstr $137
+push $137
+obj 0 23 # TextWindow.WriteLine
+call printarray
 
 call sort
 
 #print sorted array
-reg_debug $10
+pushi AfterStr
+lstr $137
+push $137
+obj 0 23 # TextWindow.WriteLine
+call printarray
 
 ret 0 # end program (return on empty stack)
 
 sort:
 #selectionsort
 
-reg_debug $1
 loop1:
 lrt $1 $2 #i<elems  | checked all elems? 
 jnc end
@@ -71,37 +75,9 @@ addi $1 $1 1 #i++
 jmp loop1
 end:
 
-reg_debug $1
 ret 0
 
+include printarray.asm
 
-
-str: char "Hallo Welt!" 0
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+BeforeStr: char "Before sort:" 0
+AfterStr: char "After sort:" 0
