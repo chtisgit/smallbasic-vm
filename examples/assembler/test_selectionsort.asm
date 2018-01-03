@@ -40,7 +40,7 @@ push $137
 obj 0 23 # TextWindow.WriteLine
 call printarray
 
-ret 0 # end program (return on empty stack)
+ret # end program (return on empty stack)
 
 sort:
 #selectionsort
