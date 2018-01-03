@@ -66,7 +66,7 @@ obj 0 23 # TextWindow.WriteLine
 call printarray
 #reg_debug $10
 
-ret 0 # end program (return on empty stack)
+ret # end program (return on empty stack)
 
 sort:
 #arguments
@@ -186,7 +186,7 @@ ilrtr:
 
 
 
-ret 0
+ret
 
 include printarray.asm
 

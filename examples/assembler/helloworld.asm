@@ -3,7 +3,7 @@ lstr $2 # load string into register 2
 push $2 # push the string
 obj 0 23 # call TextWindow.WriteLine
 obj 0 17 # call TextWindow.Pause
-ret 0 # end program (return on empty stack)
+ret # end program (return on empty stack)
 
 
 

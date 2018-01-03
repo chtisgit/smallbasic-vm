@@ -95,11 +95,6 @@ op_call:{
 	}
 	dispatch(0);
 op_ret:
-	if(state.stack.size() < IMM16(0)){
-		return;
-	}
-	state.stack.erase(state.stack.end()-IMM16(0),state.stack.end());
-
 	if(!state.ret()) return;
 	dispatch(0);
 op_jc:

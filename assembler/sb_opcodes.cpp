@@ -30,7 +30,7 @@ std::map<std::string, Opcode> mnemonic_table = {
 	{"addi", {9, 3, 5, {OT_REGISTER, OT_REGISTER, OT_IMM16}}},
 	{"pop", {10, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},
 	{"call", {11, 1, 5, {OT_IMM32, OT_NO, OT_NO}}},
-	{"ret", {12, 1, 3, {OT_IMM16, OT_NO, OT_NO}}},
+	{"ret", {12, 0, 3, {OT_NO, OT_NO, OT_NO}}},
 	{"jc", {13, 1, 5, {OT_IMM32, OT_NO, OT_NO}}},
 	{"jnc", {14, 1, 5, {OT_IMM32, OT_NO, OT_NO}}},
 	{"lstr", {15, 1, 2, {OT_REGISTER, OT_NO, OT_NO}}},

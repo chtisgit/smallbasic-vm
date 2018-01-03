@@ -75,7 +75,7 @@ addi $1 $1 1 #i++
 jmp loop1
 end:
 
-ret 0
+ret
 
 include printarray.asm
 

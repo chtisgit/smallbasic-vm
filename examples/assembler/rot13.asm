@@ -48,7 +48,7 @@ ccat $5 $1 $4
 push $5
 obj 0 23 # TextWindow.WriteLine
 
-ret 0
+ret
 
 
 rot13:
@@ -71,7 +71,7 @@ addi $0 $0 -26
 addi $0 $0 65
 .exit:
 pop $1
-ret 0
+ret
 
 
 entertext: char "Please Enter Text: " 0

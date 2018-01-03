@@ -42,6 +42,6 @@ pop $4
 pop $3
 pop $2
 pop $1
-ret 0
+ret
 .arrstr: char "Array: " 0 
 .space: char " " 0

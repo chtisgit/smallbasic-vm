@@ -19,7 +19,7 @@ obj 0 23 # call TextWindow.WriteLine
 
 
 
-ret 0 # end program (return on empty stack)
+ret # end program (return on empty stack)
 
 
 
