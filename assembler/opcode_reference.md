@@ -18,7 +18,7 @@ div     |8|8|reg| reg | reg | divides value of operand 1 by that of operand 2 an
 addi    |9|9|reg| reg | imm16 | adds 16-bit signed immediate (integer) value of operand 2 to that of operand 1 and saves result in dst
 pop     |10| 0A |reg|-| - | takes value off the stack and places it in dst
 call    |11| 0B |imm32|-| - | pushes return address then unconditionally jumps to byte address given in dst
-ret     |12| 0C |-|-| - | takes return address from the stack, pops the stack n times (operand 1), then jumps to the address previously taken from the stack
+ret     |12| 0C |-|-| - | takes last adress from callstack, jumps there; ends program if the callstack is empty 
 jc      |13| 0D |imm32|-| - | jump to address from dst if CF is set, then reset CF
 jnc     |14| 0E |imm32|-| - | jump to address from dst if CF is not set, then reset CF
 lstr    |15| 0F |reg|-| - | pops address from the stack from which it loads a NUL-terminated string into dst
