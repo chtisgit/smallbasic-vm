@@ -23,12 +23,24 @@ auto help(const char *app) -> void
 	     << "default output file: a.out" << endl;
 }
 
+auto cutfilename(std::string& path) -> void
+{
+	auto pos = path.rfind('/');
+	if(pos != std::string::npos){
+		path.erase(path.begin()+pos+1,path.end());
+	}else{
+		path.clear();
+	}
+}
+
 auto assemble(const char *inputfile, ostream& out) -> int
 {
 
 	constexpr int LINE_LEN = 200;
 	char line[LINE_LEN];
 	Output output{out};
+	std::string basepath = inputfile;
+	cutfilename(basepath);
 
 	// AssemblyFile must have a noexcept move constructor!
 	std::vector<AssemblyFile> includes;
@@ -47,8 +59,7 @@ auto assemble(const char *inputfile, ostream& out) -> int
 
 		current_file.line++;
 		if(current_file.stream->fail()){
-			cerr << "failed to read from file " << *current_file.path << endl;
-			break;
+			throw AssemblerError("could not read file",current_file);
 		}
 		current_file.stream->getline(line, LINE_LEN);
 		if(current_file.stream->eof()){
@@ -95,11 +106,12 @@ auto assemble(const char *inputfile, ostream& out) -> int
 
 		if(tok[0] == "include"){
 			const char *filename = strstr(line, "include")+8;
-			auto *i = static_cast<istream*>(new ifstream(filename));
-			if(i == nullptr){
-				throw AssemblerError(string("could not open included file \"")+filename+"\"",current_file);
+			std::string filepath = basepath+filename;
+			auto *i = static_cast<istream*>(new ifstream(filepath));
+			if(i == nullptr || i->fail()){
+				throw AssemblerError("could not open included file \""+filepath+"\"",current_file);
 			}
-			includes.emplace_back(filename, 0, i);
+			includes.emplace_back(filepath.c_str(), 0, i);
 			continue;
 		}
 
