@@ -15,7 +15,7 @@ estr $4
 pushi .space
 lstr $5
 
-jmp .chris1start
+
 .chris1:
 read $3 $1 $2
 read $3 $10 $3

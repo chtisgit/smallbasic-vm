@@ -225,7 +225,7 @@ auto Output::force_write() -> void
 
 auto Output::add_opcode(const AssemblyFile& asmfile, const Opcode& op, std::vector<std::string> tok) -> void
 {
-	tok.erase(tok.cbegin());
+	tok.erase(tok.begin());
 	buffer.emplace_back(asmfile, &op, tok, most_recent_label);
 	assert(op.operands <= 3);
 	

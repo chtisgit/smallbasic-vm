@@ -1,7 +1,7 @@
 
 RM ?= rm
 CXX ?= g++
-CXXFLAGS := $(CXXFLAGS) -fPIC -I../vm
+CXXFLAGS := $(CXXFLAGS) -std=c++11 -fPIC -I../vm
 
 OBJS = object0.so object1.so object2.so
 
